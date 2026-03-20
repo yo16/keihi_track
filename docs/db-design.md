@@ -1,5 +1,9 @@
 # ケイトラ DB設計書
 
+> 本書はDB設計・APIエンドポイント仕様・RLS・Storage・マイグレーション計画を扱う。
+> フロントエンド設計・バックエンド設計・認証フロー・ディレクトリ構成については `docs/app-design.md` を参照。
+> 要件定義については `docs/specification.md` を参照。
+
 ## 1. テーブル設計
 
 ### 1.1 テーブル一覧
@@ -128,7 +132,9 @@ CREATE TABLE expenses (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   FOREIGN KEY (org_id, applicant_user_id)
-    REFERENCES organization_members(org_id, user_id)
+    REFERENCES organization_members(org_id, user_id),
+  -- 自分自身の申請は承認できない（DB層での保護）
+  CHECK (approved_by IS NULL OR approved_by != applicant_user_id)
 );
 
 -- 使用者：自分の申請一覧（ステータス別）
@@ -183,7 +189,7 @@ CREATE TABLE expense_status_logs (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   expense_id    UUID NOT NULL REFERENCES expenses(id),
   changed_by    UUID NOT NULL,
-  old_status    TEXT,
+  old_status    TEXT CHECK (old_status IS NULL OR old_status IN ('pending', 'approved', 'rejected', 'deleted')),
   new_status    TEXT NOT NULL CHECK (new_status IN ('pending', 'approved', 'rejected', 'deleted')),
   comment       TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -326,11 +332,16 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 {
   "data": [...],
   "pagination": {
-    "next_cursor": "uuid-of-last-item-or-null",
+    "next_cursor": "encoded-cursor-or-null",
     "has_more": true
   }
 }
 ```
+
+カーソルの実装方針:
+- カーソルはソートキーとIDの複合値をBase64エンコードした文字列とする（例: `created_at` + `id`）
+- UUIDは自然順序を持たないため、必ずソートキーとの組み合わせで一意性を保証する
+- 経費一覧では `(usage_date, id)` または `(created_at, id)` をカーソルとして使用する
 
 ### 2.2 エンドポイント一覧
 
@@ -364,12 +375,11 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 | POST | `/api/organizations/:orgId/expenses` | 経費を申請 | メンバー |
 | GET | `/api/organizations/:orgId/expenses` | 経費一覧を取得 | メンバー |
 | GET | `/api/organizations/:orgId/expenses/:expenseId` | 経費詳細を取得 | メンバー |
-| PATCH | `/api/organizations/:orgId/expenses/:expenseId` | 経費を編集（再申請） | メンバー（申請者本人） |
 | POST | `/api/organizations/:orgId/expenses/:expenseId/approve` | 経費を承認 | approver / admin |
 | POST | `/api/organizations/:orgId/expenses/:expenseId/reject` | 経費を却下 | approver / admin |
 | POST | `/api/organizations/:orgId/expenses/:expenseId/withdraw` | 経費を取り下げ | メンバー（申請者本人） |
-| POST | `/api/organizations/:orgId/expenses/:expenseId/resubmit` | 却下された経費を再申請 | メンバー（申請者本人） |
-| GET | `/api/organizations/:orgId/expenses/csv` | CSV出力用データ取得 | approver / admin |
+| POST | `/api/organizations/:orgId/expenses/:expenseId/resubmit` | 却下された経費を編集し再申請 | メンバー（申請者本人） |
+| POST | `/api/organizations/:orgId/expenses/csv` | CSV出力用データ取得 | approver / admin |
 
 #### 通知
 
@@ -632,7 +642,7 @@ Supabase Authでパスワード変更完了後に呼び出し、`require_passwor
 経費一覧を取得する。ロールに応じて返却範囲が異なる。
 
 **クエリパラメータ**
-- `status` : フィルター（pending, approved, rejected, deleted）。カンマ区切りで複数指定可
+- `status` : フィルター（pending, approved, rejected, deleted）。カンマ区切りで複数指定可。未指定時のデフォルトは `pending,approved,rejected`（`deleted` は明示的に指定しない限り除外）
 - `date_from` : 使用日の開始日（YYYY-MM-DD）
 - `date_to` : 使用日の終了日（YYYY-MM-DD）
 - `limit` : 取得件数（デフォルト: 20）
@@ -640,7 +650,7 @@ Supabase Authでパスワード変更完了後に呼び出し、`require_passwor
 
 **ロール別の返却範囲**
 - `user` : 自分の申請のみ
-- `approver` / `admin` : 組織内全メンバーの申請
+- `approver` / `admin` : 組織内全メンバーの申請（論理削除済みユーザーの過去申請も含む）
 
 **レスポンス** `200 OK`
 ```json
@@ -707,30 +717,6 @@ Supabase Authでパスワード変更完了後に呼び出し、`require_passwor
 **アクセス制御**
 - `user` ロール: 自分の申請のみ閲覧可
 - `approver` / `admin` ロール: 組織内の全申請を閲覧可
-
----
-
-#### PATCH /api/organizations/:orgId/expenses/:expenseId
-
-却下された経費を編集する（再申請前の内容更新）。
-
-**リクエスト**
-```json
-{
-  "amount": 1500,
-  "purpose": "交通費（東京-大阪）修正",
-  "usage_date": "2026-03-15",
-  "receipt_url": "...",
-  "receipt_thumbnail_url": "...",
-  "comment": "金額を修正しました"
-}
-```
-
-**レスポンス** `200 OK`（更新後の経費オブジェクト）
-
-**エラーケース**
-- 403: 申請者本人でない
-- 400: ステータスが `rejected` でない
 
 ---
 
@@ -832,15 +818,27 @@ Supabase Authでパスワード変更完了後に呼び出し、`require_passwor
 
 #### POST /api/organizations/:orgId/expenses/:expenseId/resubmit
 
-却下された経費を再申請する。事前にPATCHで内容を更新してから呼び出す。
+却下された経費の内容を更新し、再申請する。内容更新とステータス遷移を1回のAPIコールで完結させる。
 
-**リクエスト**: なし（内容の更新はPATCHで事前に行う）
+**リクエスト**
+```json
+{
+  "amount": 1500,
+  "purpose": "交通費（東京-大阪）修正",
+  "usage_date": "2026-03-15",
+  "receipt_url": "...",
+  "receipt_thumbnail_url": "...",
+  "comment": "金額を修正しました"
+}
+```
 
 **レスポンス** `200 OK`
 ```json
 {
   "data": {
     "id": "uuid",
+    "amount": 1500,
+    "purpose": "交通費（東京-大阪）修正",
     "status": "pending",
     "rejected_by": null,
     "rejected_at": null,
@@ -852,20 +850,26 @@ Supabase Authでパスワード変更完了後に呼び出し、`require_passwor
 **エラーケース**
 - 403: 申請者本人でない
 - 400: ステータスが `rejected` でない
+- 400: 必須項目の不足、金額が0以下
 
 **副作用**
+- 経費の内容を更新し、ステータスを `pending` に変更
 - `rejected_by`、`rejected_at`、`rejection_comment` をNULLにクリア
 - `expense_status_logs` に記録
 - 組織内の全承認者に `resubmitted` 通知を作成
 
 ---
 
-#### GET /api/organizations/:orgId/expenses/csv
+#### POST /api/organizations/:orgId/expenses/csv
 
-CSV出力用のデータを取得する。クライアント側でCSVファイルを生成する。
+CSV出力用のデータを取得する。クライアント側でCSVファイルを生成する。POSTメソッドを使用し、IDリストをボディで送信する（大量選択時のURL長制限を回避）。
 
-**クエリパラメータ**
-- `ids` : 出力対象の経費IDリスト（カンマ区切り）
+**リクエスト**
+```json
+{
+  "ids": ["uuid-1", "uuid-2", "uuid-3"]
+}
+```
 
 **レスポンス** `200 OK`
 ```json
@@ -999,44 +1003,44 @@ API層で以下の認可チェックを実装する:
 
 ```sql
 -- 指定した組織に所属しているか判定する関数
-CREATE OR REPLACE FUNCTION public.is_member_of(org_id UUID)
+CREATE OR REPLACE FUNCTION public.is_member_of(_org_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.organization_members
-    WHERE organization_id = org_id
+    WHERE org_id = _org_id
       AND user_id = auth.uid()
       AND deleted_at IS NULL
   )
 $$;
 
 -- 指定した組織での自分のロールを取得する関数
-CREATE OR REPLACE FUNCTION public.get_my_role(org_id UUID)
+CREATE OR REPLACE FUNCTION public.get_my_role(_org_id UUID)
 RETURNS TEXT
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$
   SELECT role FROM public.organization_members
-  WHERE organization_id = org_id
+  WHERE org_id = _org_id
     AND user_id = auth.uid()
     AND deleted_at IS NULL
   LIMIT 1
 $$;
 
 -- 指定した組織で管理者かどうか判定する関数
-CREATE OR REPLACE FUNCTION public.is_admin_of(org_id UUID)
+CREATE OR REPLACE FUNCTION public.is_admin_of(_org_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$
-  SELECT public.get_my_role(org_id) = 'admin'
+  SELECT public.get_my_role(_org_id) = 'admin'
 $$;
 
 -- 指定した組織で承認者以上かどうか判定する関数
-CREATE OR REPLACE FUNCTION public.is_approver_or_above(org_id UUID)
+CREATE OR REPLACE FUNCTION public.is_approver_or_above(_org_id UUID)
 RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$
-  SELECT public.get_my_role(org_id) IN ('admin', 'approver')
+  SELECT public.get_my_role(_org_id) IN ('admin', 'approver')
 $$;
 ```
 
@@ -1082,7 +1086,9 @@ CREATE POLICY "org_members_update"
   USING (public.is_admin_of(org_id));
 ```
 
-**補足**: 組織作成時に作成者自身をadminとしてorganization_membersに追加する処理は、RLSの循環依存を回避するため、サーバーサイド（API Route）でservice_roleキーを使って実行する。
+**補足**: 以下の処理はRLSの循環依存を回避するため、サーバーサイド（API Route）でservice_roleキーを使って実行する:
+- 組織作成時に作成者自身をadminとしてorganization_membersに追加する処理
+- 管理者が既存ユーザー（他組織で既にauth.usersに存在）を招待する際のorganization_membersへの追加処理
 
 #### expenses テーブル
 
@@ -1147,20 +1153,26 @@ CREATE POLICY "expense_status_logs_insert"
 ```sql
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- 参照: 自分宛の通知のみ
+-- 参照: 自分宛かつ所属組織の通知のみ（複数組織所属時の組織間分離を保証）
 CREATE POLICY "notifications_select"
   ON public.notifications FOR SELECT
-  USING (user_id = auth.uid());
+  USING (
+    user_id = auth.uid()
+    AND public.is_member_of(org_id)
+  );
 
 -- 作成: サーバーサイド（トリガーまたはservice_role）から作成
 CREATE POLICY "notifications_insert"
   ON public.notifications FOR INSERT
   WITH CHECK (false);
 
--- 更新: 自分宛の通知の既読フラグのみ
+-- 更新: 自分宛かつ所属組織の通知の既読フラグのみ
 CREATE POLICY "notifications_update"
   ON public.notifications FOR UPDATE
-  USING (user_id = auth.uid());
+  USING (
+    user_id = auth.uid()
+    AND public.is_member_of(org_id)
+  );
 ```
 
 #### RLSパフォーマンス用インデックス
@@ -1190,10 +1202,14 @@ CREATE INDEX idx_org_members_rls_lookup
 |---|-----------------|------|------|
 | 1 | `001_create_organizations` | organizations テーブル作成 | なし |
 | 2 | `002_create_organization_members` | organization_members テーブル作成 + インデックス | organizations, auth.users |
-| 3 | `003_create_expenses` | expenses テーブル作成 + インデックス | organization_members |
+| 3 | `003_create_expenses` | expenses テーブル作成 + インデックス + CHECK制約 | organization_members |
 | 4 | `004_create_expense_status_logs` | expense_status_logs テーブル作成 + インデックス | expenses |
 | 5 | `005_create_notifications` | notifications テーブル作成 + インデックス | organizations, expenses |
 | 6 | `006_create_updated_at_trigger` | updated_at 自動更新トリガー関数 + 各テーブルへのトリガー設定 | 全テーブル作成後 |
+| 7 | `007_create_rls_helpers` | RLSヘルパー関数（is_member_of, get_my_role, is_admin_of, is_approver_or_above） | organization_members |
+| 8 | `008_apply_rls_policies` | 各テーブルのRLS有効化 + ポリシー作成 + RLS用インデックス | 全テーブル + ヘルパー関数 |
+| 9 | `009_create_notification_trigger` | 通知トリガー関数（create_expense_notification）+ トリガー設定 | expenses, notifications |
+| 10 | `010_create_storage_bucket` | receiptsバケット作成 + Storage RLSポリシー | ヘルパー関数 |
 
 ### 4.2 ロールバック方針
 
@@ -1316,22 +1332,27 @@ receipts/
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('receipts', 'receipts', true);
 
--- アップロード: 認証済みユーザーのみ
+-- アップロード: 認証済みユーザーかつ所属組織のパスのみ
+-- ファイルパスは receipts/{org_id}/{expense_id}/filename の形式
 CREATE POLICY "receipts_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'receipts'
     AND auth.uid() IS NOT NULL
+    AND public.is_member_of((storage.foldername(name))[1]::UUID)
   );
 
--- 更新（差し替え）: 認証済みユーザーのみ
+-- 更新（差し替え）: 認証済みユーザーかつ所属組織のパスのみ
 CREATE POLICY "receipts_update"
   ON storage.objects FOR UPDATE
   USING (
     bucket_id = 'receipts'
     AND auth.uid() IS NOT NULL
+    AND public.is_member_of((storage.foldername(name))[1]::UUID)
   );
 ```
+
+**補足**: `storage.foldername(name)` はファイルパスからフォルダ名の配列を返す関数。`[1]` で第1階層（organization_id）を取得し、所属組織のパスのみ操作を許可する。
 
 ### 8.4 サムネイル生成
 
