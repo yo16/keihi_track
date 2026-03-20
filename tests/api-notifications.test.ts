@@ -69,7 +69,6 @@ function mockMember(role: string = "user", userId: string = "user-1") {
     user_id: userId,
     role,
     display_name: "テストユーザー",
-    require_password_change: false,
     deleted_at: null,
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",

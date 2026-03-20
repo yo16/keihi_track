@@ -33,7 +33,7 @@ export async function createOrganization(
     throw new ApiError(500, "DB_ERROR", `組織の作成に失敗しました: ${orgError.message}`);
   }
 
-  // 作成者をadminメンバーとしてINSERT（パスワード変更不要）
+  // 作成者をadminメンバーとしてINSERT
   const { error: memberError } = await adminClient
     .from("organization_members")
     .insert({
@@ -41,7 +41,6 @@ export async function createOrganization(
       user_id: userId,
       role: "admin",
       display_name: displayName,
-      require_password_change: false,
     });
 
   if (memberError) {

@@ -65,22 +65,8 @@ export function OrgLoginForm({ orgId, orgName }: OrgLoginFormProps) {
         return;
       }
 
-      // 組織メンバー情報を取得してパスワード変更要否を確認
-      const meResponse = await fetch(`/api/organizations/${orgId}/me`);
-
-      if (!meResponse.ok) {
-        setServerError("組織情報の取得に失敗しました");
-        return;
-      }
-
-      const meData = await meResponse.json();
-
-      // パスワード変更が必要な場合はパスワード変更画面へリダイレクト
-      if (meData.data?.require_password_change) {
-        router.push(`/${orgId}/change-password`);
-      } else {
-        router.push(`/${orgId}/dashboard`);
-      }
+      // ログイン成功後、ダッシュボードへ遷移
+      router.push(`/${orgId}/dashboard`);
     } catch {
       setServerError("ログイン処理中にエラーが発生しました");
     } finally {

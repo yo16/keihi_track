@@ -6,7 +6,6 @@ CREATE TABLE organization_members (
   user_id               UUID NOT NULL REFERENCES auth.users(id),
   role                  TEXT NOT NULL CHECK (role IN ('admin', 'approver', 'user')),
   display_name          TEXT NOT NULL,
-  require_password_change BOOLEAN NOT NULL DEFAULT true,
   deleted_at            TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),

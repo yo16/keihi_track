@@ -40,7 +40,6 @@ export const GET = withErrorHandler(
         org_id: member.org_id,
         display_name: member.display_name,
         role: member.role,
-        require_password_change: member.require_password_change,
       },
     });
   }

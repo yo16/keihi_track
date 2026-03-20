@@ -37,7 +37,7 @@ export async function getMembers(
   // organization_membersからメンバー一覧を取得
   let query = supabase
     .from("organization_members")
-    .select("org_id, user_id, role, display_name, require_password_change, deleted_at, created_at, updated_at")
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
     .eq("org_id", orgId);
 
   // 論理削除済みを除外
@@ -90,7 +90,7 @@ export async function getMember(
 ): Promise<OrganizationMember | null> {
   const { data, error } = await supabase
     .from("organization_members")
-    .select("org_id, user_id, role, display_name, require_password_change, deleted_at, created_at, updated_at")
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
     .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
@@ -133,12 +133,10 @@ export async function createMember(
   );
 
   let userId: string;
-  let isNewUser: boolean;
 
   if (existingUser) {
     // 3. 既存ユーザーのIDを使用
     userId = existingUser.id;
-    isNewUser = false;
   } else {
     // 2. 新規ユーザーをauth.usersに作成
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
@@ -152,7 +150,6 @@ export async function createMember(
     }
 
     userId = newUser.user.id;
-    isNewUser = true;
   }
 
   // 5. 既にアクティブメンバーとして登録済みかチェック
@@ -178,7 +175,6 @@ export async function createMember(
         user_id: userId,
         role,
         display_name: displayName,
-        require_password_change: isNewUser,
         deleted_at: null,
       },
       { onConflict: "org_id,user_id" }
@@ -195,7 +191,6 @@ export async function createMember(
     `ログインURL: ${siteUrl}/${orgId}/login`,
     `メールアドレス: ${email}`,
     `初期パスワード: ${password}`,
-    "※初回ログイン時にパスワードの変更が必要です。",
   ].join("\n");
 
   return {
@@ -225,7 +220,7 @@ export async function changeRole(
   // 対象メンバーの現在のロールを取得
   const { data: currentMember, error: fetchError } = await supabase
     .from("organization_members")
-    .select("org_id, user_id, role, display_name, require_password_change, deleted_at, created_at, updated_at")
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
     .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
@@ -261,7 +256,7 @@ export async function changeRole(
     .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
-    .select("org_id, user_id, role, display_name, require_password_change, deleted_at, created_at, updated_at")
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
     .single();
 
   if (updateError) {
@@ -287,7 +282,7 @@ export async function deleteMember(
   // 対象メンバーを取得
   const { data: targetMember, error: fetchError } = await supabase
     .from("organization_members")
-    .select("org_id, user_id, role, display_name, require_password_change, deleted_at, created_at, updated_at")
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
     .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
@@ -323,7 +318,7 @@ export async function deleteMember(
     .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
-    .select("org_id, user_id, role, display_name, require_password_change, deleted_at, created_at, updated_at")
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
     .single();
 
   if (deleteError) {
@@ -333,28 +328,3 @@ export async function deleteMember(
   return deleted as OrganizationMember;
 }
 
-/**
- * パスワード変更済みフラグを更新する
- * @param supabase - サーバー用Supabaseクライアント
- * @param orgId - 組織ID
- * @param userId - ユーザーID
- */
-export async function markPasswordChanged(
-  supabase: SupabaseClient,
-  orgId: string,
-  userId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from("organization_members")
-    .update({
-      require_password_change: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("org_id", orgId)
-    .eq("user_id", userId)
-    .is("deleted_at", null);
-
-  if (error) {
-    throw new ApiError(500, "DB_ERROR", `パスワード変更フラグの更新に失敗しました: ${error.message}`);
-  }
-}

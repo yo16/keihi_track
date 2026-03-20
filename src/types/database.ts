@@ -29,7 +29,6 @@ export interface OrganizationMember {
   user_id: string;
   role: Role;
   display_name: string;
-  require_password_change: boolean;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;

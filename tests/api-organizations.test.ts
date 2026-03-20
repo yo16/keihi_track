@@ -40,14 +40,12 @@ const mockCreateMember = jest.fn();
 const mockGetMember = jest.fn();
 const mockChangeRole = jest.fn();
 const mockDeleteMember = jest.fn();
-const mockMarkPasswordChanged = jest.fn();
 jest.mock("../src/lib/db/members", () => ({
   getMembers: (...args: unknown[]) => mockGetMembers(...args),
   createMember: (...args: unknown[]) => mockCreateMember(...args),
   getMember: (...args: unknown[]) => mockGetMember(...args),
   changeRole: (...args: unknown[]) => mockChangeRole(...args),
   deleteMember: (...args: unknown[]) => mockDeleteMember(...args),
-  markPasswordChanged: (...args: unknown[]) => mockMarkPasswordChanged(...args),
 }));
 
 import { NextRequest } from "next/server";
@@ -87,7 +85,6 @@ function mockAdminMember(orgId: string = "org-1", userId: string = "user-1") {
     user_id: userId,
     role: "admin" as const,
     display_name: "Admin User",
-    require_password_change: false,
     deleted_at: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
@@ -214,7 +211,6 @@ describe("GET /api/organizations/[orgId]/me", () => {
       user_id: "user-1",
       role: "admin",
       display_name: "テストユーザー",
-      require_password_change: false,
       deleted_at: null,
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
@@ -228,7 +224,6 @@ describe("GET /api/organizations/[orgId]/me", () => {
     expect(json.data.user_id).toBe("user-1");
     expect(json.data.org_id).toBe("org-1");
     expect(json.data.role).toBe("admin");
-    expect(json.data.require_password_change).toBe(false);
   });
 
   it("メンバーでない場合404を返すこと", async () => {
@@ -239,39 +234,6 @@ describe("GET /api/organizations/[orgId]/me", () => {
     const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
 
     expect(res.status).toBe(404);
-  });
-});
-
-// ============================
-// PATCH /api/organizations/[orgId]/me/password-changed
-// ============================
-describe("PATCH /api/organizations/[orgId]/me/password-changed", () => {
-  let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
-
-  beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/me/password-changed/route");
-    handler = mod.PATCH;
-  });
-
-  it("パスワード変更完了を記録できること（200）", async () => {
-    mockAuthenticatedUser("user-1");
-    mockAdminMember("org-1", "user-1");
-    mockMarkPasswordChanged.mockResolvedValue(undefined);
-
-    const req = createRequest("PATCH", "/api/organizations/org-1/me/password-changed");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
-
-    expect(res.status).toBe(200);
-    expect(mockMarkPasswordChanged).toHaveBeenCalled();
-  });
-
-  it("未認証の場合401を返すこと", async () => {
-    mockUnauthenticated();
-
-    const req = createRequest("PATCH", "/api/organizations/org-1/me/password-changed");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
-
-    expect(res.status).toBe(401);
   });
 });
 
@@ -406,7 +368,7 @@ describe("PATCH /api/organizations/[orgId]/members/[userId]", () => {
       user_id: "user-2",
       role: "approver",
       display_name: "対象ユーザー",
-      require_password_change: false,
+
       deleted_at: null,
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z",
@@ -472,7 +434,7 @@ describe("DELETE /api/organizations/[orgId]/members/[userId]", () => {
       user_id: "user-2",
       role: "user",
       display_name: "削除対象",
-      require_password_change: false,
+
       deleted_at: "2026-03-20T00:00:00Z",
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-03-20T00:00:00Z",
