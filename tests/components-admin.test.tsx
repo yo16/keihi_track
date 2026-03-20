@@ -149,72 +149,103 @@ describe("MemberList", () => {
   });
 });
 
-// ── InviteTextDialog ──
+// ── InviteSuccessDialog ──
 
-describe("InviteTextDialog", () => {
-  let InviteTextDialog: React.ComponentType<{
+describe("InviteSuccessDialog", () => {
+  let InviteSuccessDialog: React.ComponentType<{
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    invitationText: string;
+    invitationSent: boolean;
+    loginUrl: string;
   }>;
 
   beforeAll(async () => {
-    const mod = await import("../src/components/admin/invite-text");
-    InviteTextDialog = mod.InviteTextDialog;
+    const mod = await import("../src/components/admin/invite-success");
+    InviteSuccessDialog = mod.InviteSuccessDialog;
   });
 
-  it("招待テキストが表示されること", () => {
-    const invitationText = "テスト招待テキスト\nログインURL: https://example.com";
+  it("招待メール送信時に送信メッセージが表示されること", () => {
     render(
-      <InviteTextDialog
+      <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
-        invitationText={invitationText}
+        invitationSent={true}
+        loginUrl="https://example.com/test-org/login"
       />
     );
 
-    expect(screen.getByText(invitationText)).toBeInTheDocument();
+    expect(screen.getByText(/招待メールを送信しました/)).toBeInTheDocument();
   });
 
-  it("コピーボタンが表示されること", () => {
+  it("既存ユーザー追加時に追加メッセージが表示されること", () => {
     render(
-      <InviteTextDialog
+      <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
-        invitationText="テスト"
+        invitationSent={false}
+        loginUrl="https://example.com/test-org/login"
       />
     );
 
-    expect(screen.getByText("コピー")).toBeInTheDocument();
+    expect(screen.getByText(/メンバーを組織に追加しました/)).toBeInTheDocument();
   });
 
-  it("コピーボタンクリックでクリップボードにテキストがコピーされること", async () => {
-    const invitationText = "テスト招待テキスト";
+  it("ログインURLが表示されること", () => {
+    const loginUrl = "https://example.com/test-org/login";
     render(
-      <InviteTextDialog
+      <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
-        invitationText={invitationText}
+        invitationSent={true}
+        loginUrl={loginUrl}
       />
     );
 
-    fireEvent.click(screen.getByText("コピー"));
+    expect(screen.getByText(loginUrl)).toBeInTheDocument();
+  });
+
+  it("URLコピーボタンが表示されること", () => {
+    render(
+      <InviteSuccessDialog
+        open={true}
+        onOpenChange={jest.fn()}
+        invitationSent={true}
+        loginUrl="https://example.com/test-org/login"
+      />
+    );
+
+    expect(screen.getByText("URLをコピー")).toBeInTheDocument();
+  });
+
+  it("コピーボタンクリックでログインURLがクリップボードにコピーされること", async () => {
+    const loginUrl = "https://example.com/test-org/login";
+    render(
+      <InviteSuccessDialog
+        open={true}
+        onOpenChange={jest.fn()}
+        invitationSent={true}
+        loginUrl={loginUrl}
+      />
+    );
+
+    fireEvent.click(screen.getByText("URLをコピー"));
 
     await waitFor(() => {
-      expect(mockWriteText).toHaveBeenCalledWith(invitationText);
+      expect(mockWriteText).toHaveBeenCalledWith(loginUrl);
     });
   });
 
   it("コピー成功後に「コピーしました」が表示されること", async () => {
     render(
-      <InviteTextDialog
+      <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
-        invitationText="テスト"
+        invitationSent={true}
+        loginUrl="https://example.com/test-org/login"
       />
     );
 
-    fireEvent.click(screen.getByText("コピー"));
+    fireEvent.click(screen.getByText("URLをコピー"));
 
     await waitFor(() => {
       expect(screen.getByText("コピーしました")).toBeInTheDocument();
@@ -247,9 +278,20 @@ describe("MemberFormDialog", () => {
 
     expect(screen.getByText("メンバー追加")).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toBeInTheDocument();
-    expect(screen.getByLabelText("初期パスワード")).toBeInTheDocument();
     expect(screen.getByLabelText("表示名")).toBeInTheDocument();
     expect(screen.getByLabelText("ロール")).toBeInTheDocument();
+  });
+
+  it("パスワード入力フィールドが表示されないこと", () => {
+    render(
+      <MemberFormDialog
+        open={true}
+        onOpenChange={jest.fn()}
+        onCreated={jest.fn()}
+      />
+    );
+
+    expect(screen.queryByLabelText("初期パスワード")).not.toBeInTheDocument();
   });
 
   it("送信ボタンが表示されること", () => {

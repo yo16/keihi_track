@@ -2,9 +2,9 @@
 
 /**
  * メンバー作成フォーム
- * Dialog内に配置し、メールアドレス・初期パスワード・表示名・ロール選択を入力する
+ * Dialog内に配置し、メールアドレス・表示名・ロール選択を入力する
  * React Hook Form + createMemberSchema でバリデーション
- * 作成成功後は InviteTextDialog を表示する
+ * 作成成功後は InviteSuccessDialog を表示する
  */
 
 import { useState } from "react";
@@ -32,7 +32,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { InviteTextDialog } from "@/components/admin/invite-text";
+import { InviteSuccessDialog } from "@/components/admin/invite-success";
 import type { CreateMemberResponse } from "@/types/member";
 
 interface MemberFormDialogProps {
@@ -52,9 +52,13 @@ export function MemberFormDialog({
   const { orgId } = useAuthContext();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // 招待テキストダイアログの状態
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [invitationText, setInvitationText] = useState("");
+  // 招待成功ダイアログの状態
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [invitationSent, setInvitationSent] = useState(false);
+
+  // 組織専用ログインURLの生成
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const loginUrl = `${siteUrl}/${orgId}/login`;
 
   const {
     register,
@@ -66,7 +70,6 @@ export function MemberFormDialog({
     resolver: zodResolver(createMemberSchema),
     defaultValues: {
       email: "",
-      password: "",
       display_name: "",
       role: "user",
     },
@@ -98,9 +101,9 @@ export function MemberFormDialog({
       reset();
       onOpenChange(false);
 
-      // 招待テキストダイアログを表示
-      setInvitationText(result.data.invitation_text);
-      setInviteDialogOpen(true);
+      // 招待成功ダイアログを表示
+      setInvitationSent(result.data.invitation_sent);
+      setSuccessDialogOpen(true);
 
       // 一覧を更新
       onCreated();
@@ -128,7 +131,7 @@ export function MemberFormDialog({
           <DialogHeader>
             <DialogTitle>メンバー追加</DialogTitle>
             <DialogDescription>
-              新しいメンバーの情報を入力してください。
+              新しいメンバーの情報を入力してください。招待メールが送信されます。
             </DialogDescription>
           </DialogHeader>
 
@@ -149,23 +152,6 @@ export function MemberFormDialog({
               {errors.email && (
                 <p className="text-xs text-destructive">
                   {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            {/* 初期パスワード入力 */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="member-password">初期パスワード</Label>
-              <Input
-                id="member-password"
-                type="text"
-                placeholder="8文字以上"
-                {...register("password")}
-                aria-invalid={!!errors.password}
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive">
-                  {errors.password.message}
                 </p>
               )}
             </div>
@@ -220,17 +206,18 @@ export function MemberFormDialog({
 
             {/* 送信ボタン */}
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "作成中..." : "メンバーを追加"}
+              {isSubmitting ? "招待中..." : "メンバーを追加"}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* 招待テキスト表示ダイアログ */}
-      <InviteTextDialog
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        invitationText={invitationText}
+      {/* 招待成功ダイアログ */}
+      <InviteSuccessDialog
+        open={successDialogOpen}
+        onOpenChange={setSuccessDialogOpen}
+        invitationSent={invitationSent}
+        loginUrl={loginUrl}
       />
     </>
   );

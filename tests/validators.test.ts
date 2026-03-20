@@ -106,7 +106,6 @@ describe("rejectExpenseSchema", () => {
 describe("createMemberSchema", () => {
   const validData = {
     email: "user@example.com",
-    password: "password123",
     display_name: "テストユーザー",
     role: "user" as const,
   };
@@ -140,20 +139,14 @@ describe("createMemberSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("passwordが7文字以下の場合エラーになること", () => {
-    const result = createMemberSchema.safeParse({
-      ...validData,
-      password: "short",
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("passwordが8文字ちょうどの場合パースできること", () => {
-    const result = createMemberSchema.safeParse({
-      ...validData,
-      password: "12345678",
-    });
+  it("passwordフィールドがスキーマに含まれないこと", () => {
+    // passwordを付けてもパースは成功するが、結果にpasswordは含まれない
+    const dataWithPassword = { ...validData, password: "password123" };
+    const result = createMemberSchema.safeParse(dataWithPassword);
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect("password" in result.data).toBe(false);
+    }
   });
 
   it("display_nameが空文字の場合エラーになること", () => {

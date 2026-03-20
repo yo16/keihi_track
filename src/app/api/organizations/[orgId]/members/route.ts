@@ -78,11 +78,10 @@ export const POST = withErrorHandler(
       throw new ApiError(400, "VALIDATION_ERROR", message);
     }
 
-    // 4. DB操作: メンバーを追加（招待テキスト含む）
+    // 4. DB操作: メンバーを追加（招待メール送信）
     const result = await createMember(
       orgId,
       parsed.data.email,
-      parsed.data.password,
       parsed.data.display_name,
       parsed.data.role
     );

@@ -18,7 +18,7 @@ export interface CreateMemberResult {
   display_name: string;
   email: string;
   role: string;
-  invitation_text: string;
+  invitation_sent: boolean;
 }
 
 /**
@@ -105,18 +105,18 @@ export async function getMember(
 
 /**
  * 組織にメンバーを追加する
- * admin clientを使用（service_role必須: ユーザー作成とRLSバイパス）
+ * admin clientを使用（service_role必須: 招待メール送信とRLSバイパス）
+ * 新規ユーザーにはinviteUserByEmailで招待メールを送信する
+ * 既存ユーザー（他組織に所属済み）はorganization_membersへの追加のみ
  * @param orgId - 組織ID
  * @param email - メールアドレス
- * @param password - 初期パスワード
  * @param displayName - 組織内表示名
  * @param role - ロール（approver または user）
- * @returns メンバー情報と招待テキスト
+ * @returns メンバー情報と招待メール送信結果
  */
 export async function createMember(
   orgId: string,
   email: string,
-  password: string,
   displayName: string,
   role: "approver" | "user"
 ): Promise<CreateMemberResult> {
@@ -133,26 +133,38 @@ export async function createMember(
   );
 
   let userId: string;
+  let invitationSent = false;
 
   if (existingUser) {
-    // 3. 既存ユーザーのIDを使用
+    // 既存ユーザーのIDを使用（招待メールは送信しない）
     userId = existingUser.id;
   } else {
-    // 2. 新規ユーザーをauth.usersに作成
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+    // 新規ユーザー: inviteUserByEmailで招待メールを送信
+    // TODO: redirectToは招待後のリダイレクト先（後続タスクで正式設定）
+    const redirectTo = process.env.NEXT_PUBLIC_SITE_URL
+      ? `${process.env.NEXT_PUBLIC_SITE_URL}/${orgId}/login`
+      : "";
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
-      password,
-      email_confirm: true,
-    });
+      {
+        redirectTo,
+        data: {
+          org_id: orgId,
+          display_name: displayName,
+          role: role,
+        },
+      }
+    );
 
-    if (createError) {
-      throw new ApiError(500, "DB_ERROR", `ユーザーの作成に失敗しました: ${createError.message}`);
+    if (inviteError) {
+      throw new ApiError(500, "DB_ERROR", `招待メールの送信に失敗しました: ${inviteError.message}`);
     }
 
-    userId = newUser.user.id;
+    userId = inviteData.user.id;
+    invitationSent = true;
   }
 
-  // 5. 既にアクティブメンバーとして登録済みかチェック
+  // 既にアクティブメンバーとして登録済みかチェック
   const { data: existingMember } = await adminClient
     .from("organization_members")
     .select("org_id, user_id, deleted_at")
@@ -165,7 +177,7 @@ export async function createMember(
     throw new ApiError(409, "CONFLICT", "既にこの組織のアクティブメンバーとして登録されています");
   }
 
-  // 4. organization_membersにINSERT
+  // organization_membersにINSERT
   // 論理削除済みのレコードが存在する場合はupsertで復活させる
   const { error: memberError } = await adminClient
     .from("organization_members")
@@ -184,21 +196,12 @@ export async function createMember(
     throw new ApiError(500, "DB_ERROR", `メンバーの登録に失敗しました: ${memberError.message}`);
   }
 
-  // 6. 招待テキストを生成
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com";
-  const invitationText = [
-    "ケイトラに招待されました。",
-    `ログインURL: ${siteUrl}/${orgId}/login`,
-    `メールアドレス: ${email}`,
-    `初期パスワード: ${password}`,
-  ].join("\n");
-
   return {
     user_id: userId,
     display_name: displayName,
     email,
     role,
-    invitation_text: invitationText,
+    invitation_sent: invitationSent,
   };
 }
 

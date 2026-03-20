@@ -19,7 +19,7 @@ export interface CreateMemberResponse {
   display_name: string;
   email: string;
   role: Role;
-  invitation_text: string;
+  invitation_sent: boolean;
 }
 
 /** PATCH /api/organizations/:orgId/members/:userId のレスポンス */

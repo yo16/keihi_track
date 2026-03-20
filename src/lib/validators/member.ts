@@ -4,15 +4,11 @@
 import { z } from "zod";
 
 /** メンバー作成スキーマ: admin以外のロールのみ指定可能
- * NOTE: 招待メール方式への移行時にpasswordフィールドを削除し、
- * DB関数(members.ts)・API Route・フロントエンドも合わせて修正する */
+ * 招待メール方式のため、パスワードは不要 */
 export const createMemberSchema = z.object({
   email: z
     .string()
     .email({ message: "有効なメールアドレスを入力してください" }),
-  password: z
-    .string()
-    .min(8, { message: "パスワードは8文字以上で入力してください" }),
   display_name: z
     .string()
     .min(1, { message: "表示名を入力してください" }),
