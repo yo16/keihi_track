@@ -2,7 +2,8 @@
 
 /**
  * 新規組織作成ダイアログ
- * 組織名 + 表示名を入力して POST /api/organizations で組織を作成する
+ * サーバーサイドでユーザー作成+組織作成を行い、
+ * その後クライアントでログインしてダッシュボードへ遷移する
  */
 
 import { useState } from "react";
@@ -11,9 +12,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 
 import {
-  createOrganizationSchema,
-  type CreateOrganizationInput,
+  createOrganizationWithSignupSchema,
+  type CreateOrganizationWithSignupInput,
 } from "@/lib/validators/organization";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,15 +39,16 @@ export function CreateOrgDialog() {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<CreateOrganizationInput>({
-    resolver: zodResolver(createOrganizationSchema),
+  } = useForm<CreateOrganizationWithSignupInput>({
+    resolver: zodResolver(createOrganizationWithSignupSchema),
     defaultValues: {
+      email: "",
+      password: "",
       name: "",
       display_name: "",
     },
   });
 
-  // ダイアログを開いたときにフォームをリセット
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
@@ -54,13 +57,13 @@ export function CreateOrgDialog() {
     }
   };
 
-  // 組織作成処理
-  const onSubmit = async (data: CreateOrganizationInput) => {
+  const onSubmit = async (data: CreateOrganizationWithSignupInput) => {
     setServerError(null);
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/organizations", {
+      // 1. サーバーサイドでユーザー作成+組織作成（Admin API使用）
+      const response = await fetch("/api/organizations/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -75,9 +78,21 @@ export function CreateOrgDialog() {
       }
 
       const result = await response.json();
-      const orgId = result.data?.id;
+      const orgId = result.data?.organization?.id;
 
-      // 作成した組織のダッシュボードへリダイレクト
+      // 2. クライアントでログイン（セッションCookieを取得）
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (signInError) {
+        setServerError("組織は作成されましたが、ログインに失敗しました。トップページからログインしてください。");
+        return;
+      }
+
+      // 3. ダッシュボードへ遷移
       if (orgId) {
         router.push(`/${orgId}/dashboard`);
       }
@@ -101,11 +116,42 @@ export function CreateOrgDialog() {
         <DialogHeader>
           <DialogTitle>新規組織を作成</DialogTitle>
           <DialogDescription>
-            組織名と表示名を入力してください
+            アカウントと組織を同時に作成します
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          {/* 組織名入力 */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="signup-email">メールアドレス</Label>
+            <Input
+              id="signup-email"
+              type="email"
+              placeholder="example@example.com"
+              {...register("email")}
+              aria-invalid={!!errors.email}
+            />
+            {errors.email && (
+              <p className="text-xs text-destructive">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="signup-password">パスワード</Label>
+            <Input
+              id="signup-password"
+              type="password"
+              placeholder="8文字以上"
+              {...register("password")}
+              aria-invalid={!!errors.password}
+            />
+            {errors.password && (
+              <p className="text-xs text-destructive">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="org-name">組織名</Label>
             <Input
@@ -120,9 +166,8 @@ export function CreateOrgDialog() {
             )}
           </div>
 
-          {/* 表示名入力 */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="org-display-name">表示名</Label>
+            <Label htmlFor="org-display-name">あなたの表示名</Label>
             <Input
               id="org-display-name"
               type="text"
@@ -137,14 +182,12 @@ export function CreateOrgDialog() {
             )}
           </div>
 
-          {/* サーバーエラー表示 */}
           {serverError && (
             <p className="text-xs text-destructive">{serverError}</p>
           )}
 
-          {/* 作成ボタン */}
           <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? "作成中..." : "組織を作成"}
+            {isLoading ? "作成中..." : "アカウントと組織を作成"}
           </Button>
         </form>
       </DialogContent>

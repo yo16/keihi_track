@@ -3,7 +3,9 @@
  */
 import { z } from "zod";
 
-/** メンバー作成スキーマ: admin以外のロールのみ指定可能 */
+/** メンバー作成スキーマ: admin以外のロールのみ指定可能
+ * NOTE: 招待メール方式への移行時にpasswordフィールドを削除し、
+ * DB関数(members.ts)・API Route・フロントエンドも合わせて修正する */
 export const createMemberSchema = z.object({
   email: z
     .string()

@@ -75,7 +75,6 @@ CREATE TABLE organization_members (
   user_id               UUID NOT NULL REFERENCES auth.users(id),
   role                  TEXT NOT NULL CHECK (role IN ('admin', 'approver', 'user')),
   display_name          TEXT NOT NULL,
-  require_password_change BOOLEAN NOT NULL DEFAULT true,
   deleted_at            TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -99,15 +98,14 @@ CREATE INDEX idx_org_members_by_user
 | user_id | UUID | PK（複合）, FK → auth.users.id | ユーザーID（Supabase Auth） |
 | role | TEXT | NOT NULL, CHECK | ロール（admin / approver / user） |
 | display_name | TEXT | NOT NULL | 組織内での表示名 |
-| require_password_change | BOOLEAN | NOT NULL, DEFAULT true | パスワード変更必要フラグ |
 | deleted_at | TIMESTAMPTZ | NULL許可 | 論理削除日時。NULLならアクティブ |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 作成日時 |
 | updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | 更新日時 |
 
 備考:
 - 複合主キー (org_id, user_id) により、同一組織に同一ユーザーが重複登録されることを防ぐ
-- `require_password_change` は管理者がユーザー作成時に `true` で設定される。初回ログイン時にパスワード変更後 `false` に更新
 - 論理削除は `deleted_at IS NOT NULL` で判定
+- パスワード管理はSupabase Authに委任。招待メール経由でユーザーが自分でパスワードを設定する
 
 #### 1.3.3 expenses（経費申請）
 
@@ -357,7 +355,7 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 | メソッド | パス | 説明 | 必要ロール |
 |---------|------|------|-----------|
 | GET | `/api/organizations/:orgId/members` | メンバー一覧を取得 | admin |
-| POST | `/api/organizations/:orgId/members` | メンバーを追加 | admin |
+| POST | `/api/organizations/:orgId/members` | メンバーを招待（メール送信） | admin |
 | PATCH | `/api/organizations/:orgId/members/:userId` | ロールを変更 | admin |
 | DELETE | `/api/organizations/:orgId/members/:userId` | メンバーを論理削除 | admin |
 
@@ -365,8 +363,8 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 
 | メソッド | パス | 説明 | 必要ロール |
 |---------|------|------|-----------|
+| POST | `/api/organizations/signup` | サインアップ+組織作成（一括） | なし（未認証） |
 | GET | `/api/organizations/:orgId/me` | 自分のメンバー情報を取得 | メンバー |
-| PATCH | `/api/organizations/:orgId/me/password-changed` | パスワード変更完了を記録 | メンバー |
 
 #### 経費
 
@@ -467,13 +465,12 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 
 #### POST /api/organizations/:orgId/members
 
-管理者がユーザーを組織に追加する。Supabase Authにアカウントが存在しない場合は新規作成する。
+管理者がユーザーを組織に招待する。Supabase Authの `inviteUserByEmail` で招待メールを自動送信する。
 
 **リクエスト**
 ```json
 {
   "email": "tanaka@example.com",
-  "password": "initial-password-123",
   "display_name": "田中花子",
   "role": "user"
 }
@@ -487,7 +484,7 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
     "display_name": "田中花子",
     "email": "tanaka@example.com",
     "role": "user",
-    "invitation_text": "ケイトラに招待されました。\nログインURL: https://example.com/{org_id}/login\nメールアドレス: tanaka@example.com\n初期パスワード: initial-password-123\n※初回ログイン時にパスワードの変更が必要です。"
+    "invitation_sent": true
   }
 }
 ```
@@ -498,10 +495,10 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 
 **処理フロー**
 1. Supabase Auth Admin APIでメールアドレスを検索
-2. 存在しない場合: `supabase.auth.admin.createUser()` でアカウント作成
-3. 存在する場合: 既存のauth.usersのIDを使用
+2. 存在しない場合: `supabase.auth.admin.inviteUserByEmail()` で招待メール送信（auth.usersにユーザーが作成され、招待メールが自動送信される）
+3. 存在する場合: 既存のauth.usersのIDを使用（既にアカウントがあるユーザーの別組織への追加）
 4. `organization_members` にレコードを挿入
-5. 招待テキストを生成してレスポンスに含める
+5. 招待されたユーザーはメール内リンクからパスワードを設定してアカウントを有効化する
 
 ---
 
@@ -559,9 +556,38 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
 
 ---
 
+#### POST /api/organizations/signup
+
+未認証ユーザーがアカウント作成と組織作成を一括で行う。Admin APIでユーザー作成（メール確認スキップ）し、組織を作成する。
+
+**リクエスト**
+```json
+{
+  "email": "yamada@example.com",
+  "password": "password123",
+  "name": "株式会社サンプル",
+  "display_name": "山田太郎"
+}
+```
+
+**レスポンス** `201 Created`
+```json
+{
+  "data": {
+    "organization": { "id": "uuid", "name": "株式会社サンプル" },
+    "email": "yamada@example.com",
+    "requires_login": true
+  }
+}
+```
+
+**備考**: レスポンス後、クライアント側で `signInWithPassword()` を呼んでセッションを取得する。
+
+---
+
 #### GET /api/organizations/:orgId/me
 
-自分のメンバー情報を取得する。ログイン直後のロール判定やパスワード変更要否の確認に使用。
+自分のメンバー情報を取得する。ログイン直後のロール判定に使用。
 
 **レスポンス** `200 OK`
 ```json
@@ -570,23 +596,7 @@ DB操作関数は `src/lib/db/` に配置し、API Routeハンドラから呼び
     "user_id": "uuid",
     "org_id": "uuid",
     "display_name": "山田太郎",
-    "role": "admin",
-    "require_password_change": false
-  }
-}
-```
-
----
-
-#### PATCH /api/organizations/:orgId/me/password-changed
-
-Supabase Authでパスワード変更完了後に呼び出し、`require_password_change` を `false` に更新する。
-
-**レスポンス** `200 OK`
-```json
-{
-  "data": {
-    "require_password_change": false
+    "role": "admin"
   }
 }
 ```
@@ -1283,25 +1293,34 @@ auth.users (Supabase Auth管理)
 - アプリケーション固有のユーザー情報（表示名、ロール等）は`organization_members`テーブルで管理する
 - 1人のユーザー（auth.users）が複数の`organization_members`レコードを持ち得る（複数組織所属）
 
-### 7.2 管理者によるユーザー作成
+### 7.2 管理者によるユーザー招待
 
-サーバーサイド（API Route）から`supabase.auth.admin.createUser()`を使用する。service_roleキーが必要なため、クライアント側には公開しない。
+サーバーサイド（API Route）から `supabase.auth.admin.inviteUserByEmail()` を使用する。service_roleキーが必要。
 
 処理フロー:
 1. Supabase Auth Admin APIでメールアドレスを検索
-2. 存在しない場合: `supabase.auth.admin.createUser()` でアカウント作成（`email_confirm: true`で確認スキップ）
-3. 存在する場合: 既存のauth.usersのIDを使用
-4. `organization_members` にレコードを挿入（`require_password_change` は新規ユーザーなら`true`、既存ユーザーなら`false`）
-5. 招待テキストを生成してレスポンスに含める
+2. 存在しない場合: `supabase.auth.admin.inviteUserByEmail()` で招待メール送信（auth.usersにユーザーが作成され、Supabaseが自動でメール送信）
+3. 存在する場合: 既存のauth.usersのIDを使用（別組織への追加）
+4. `organization_members` にレコードを挿入
+5. 招待されたユーザーはメール内リンクからパスワードを設定してアカウントを有効化
 
 ### 7.3 組織作成時の初期管理者登録
 
 RLSの循環依存を回避するため、サーバーサイドでservice_roleキーを使って実行する。
 
-1. ユーザーが汎用ページから組織作成リクエスト
-2. API Routeがservice_roleキーでorganizationsにINSERT
-3. 同トランザクションでorganization_membersに作成者をadminとしてINSERT
-4. `require_password_change = false`（自分で登録したため）
+1. ユーザーが汎用ページからメール+パスワード+組織名+表示名を入力
+2. `POST /api/organizations/signup` で処理
+3. Admin APIで `createUser({ email_confirm: true })` でアカウント作成（メール確認スキップ）
+4. service_roleキーでorganizationsにINSERT
+5. 同時にorganization_membersに作成者をadminとしてINSERT
+6. クライアント側で `signInWithPassword()` を呼んでセッション取得
+
+### 7.4 メール送信基盤
+
+- Supabase AuthのカスタムSMTPとしてResendを使用する
+- ダッシュボードの Settings > Authentication > SMTP Settings で設定
+- 招待メール・パスワードリセットメール等はSupabase Authが自動送信する
+- 経費ステータス変更時のメール通知はAPI RouteからResend APIを直接呼び出す
 
 ---
 
@@ -1453,10 +1472,12 @@ CREATE TRIGGER trg_expense_notification
 | NEXT_PUBLIC_SUPABASE_URL | SupabaseプロジェクトのURL | クライアント・サーバー共通 |
 | NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | Supabaseの公開キー（旧: anon key） | クライアント側 |
 | SUPABASE_SECRET_KEY | Supabaseの秘匿キー（旧: service_role key） | サーバーサイドのみ |
+| RESEND_API_KEY | Resend APIキー（メール通知送信用） | サーバーサイドのみ |
 
 注意:
 - 2025年以降の新規プロジェクトでは、従来の `anon key` / `service_role key` が `publishable key` / `secret key` に名称変更されている
 - `NEXT_PUBLIC_`プレフィックスが付いた変数はクライアント側に公開される
 - `SUPABASE_SECRET_KEY`はRLSをバイパスするため、サーバーサイド（API Route）でのみ使用
+- `RESEND_API_KEY`はメール通知送信に使用。招待メール・パスワードリセットメールはSupabase Auth（カスタムSMTP経由）が処理するため、このキーは経費ステータス変更通知のみに使用
 - Vercelへのデプロイ時はVercelの環境変数設定で値を設定
 - ローカル開発では`.env.local`に設定（`.gitignore`に含まれていることを確認）
