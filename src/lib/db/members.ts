@@ -140,9 +140,10 @@ export async function createMember(
     userId = existingUser.id;
   } else {
     // 新規ユーザー: inviteUserByEmailで招待メールを送信
-    // TODO: redirectToは招待後のリダイレクト先（後続タスクで正式設定）
-    const redirectTo = process.env.NEXT_PUBLIC_SITE_URL
-      ? `${process.env.NEXT_PUBLIC_SITE_URL}/${orgId}/login`
+    // 招待リンククリック後、パスワード設定ページにリダイレクトする
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    const redirectTo = appUrl
+      ? `${appUrl}/${orgId}/set-password`
       : "";
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
