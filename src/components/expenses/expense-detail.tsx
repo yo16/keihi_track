@@ -11,6 +11,7 @@ import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils/format";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ReceiptViewer } from "@/components/shared/receipt-viewer";
 import { ExpenseForm } from "@/components/expenses/expense-form";
+import { ApprovalActions } from "@/components/expenses/approval-actions";
 import { Button } from "@/components/ui/button";
 import type { Expense } from "@/types/database";
 
@@ -22,7 +23,7 @@ interface ExpenseDetailProps {
 /** 経費詳細表示コンポーネント */
 export function ExpenseDetail({ expense }: ExpenseDetailProps) {
   const router = useRouter();
-  const { userId, orgId } = useAuthContext();
+  const { userId, orgId, role } = useAuthContext();
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [showResubmitForm, setShowResubmitForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,11 @@ export function ExpenseDetail({ expense }: ExpenseDetailProps) {
   const isOwner = expense.applicant_user_id === userId;
   const canWithdraw = isOwner && expense.status === "pending";
   const canResubmit = isOwner && expense.status === "rejected";
+  // 承認者（approver/admin）かつ申請中かつ他人の申請の場合に承認/却下ボタンを表示
+  const canApprove =
+    !isOwner &&
+    expense.status === "pending" &&
+    (role === "approver" || role === "admin");
 
   /** 取り下げ処理 */
   const handleWithdraw = async () => {
@@ -174,6 +180,11 @@ export function ExpenseDetail({ expense }: ExpenseDetailProps) {
 
       {/* エラーメッセージ */}
       {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {/* 承認/却下アクション（承認者 + 申請中 + 他人の申請） */}
+      {canApprove && (
+        <ApprovalActions expenseId={expense.id} />
+      )}
 
       {/* アクションボタン */}
       <div className="flex gap-3 pt-2">
