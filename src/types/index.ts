@@ -17,3 +17,10 @@ export type {
   PaginatedResponse,
   ApiResponse,
 } from "./api";
+
+export type {
+  MemberResponse,
+  CreateMemberResponse,
+  ChangeRoleResponse,
+  DeleteMemberResponse,
+} from "./member";
