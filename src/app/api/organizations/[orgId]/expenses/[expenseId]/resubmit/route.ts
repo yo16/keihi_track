@@ -9,6 +9,7 @@ import { ApiError, withErrorHandler } from "@/lib/api/error";
 import { getMemberOrFail } from "@/lib/auth/guard";
 import { resubmitExpense } from "@/lib/db/expenses";
 import { resubmitExpenseSchema } from "@/lib/validators/expense";
+import { notifyResubmitted } from "@/lib/email/send-notification";
 
 /** POST: 経費を再申請 */
 export const POST = withErrorHandler(
@@ -29,8 +30,8 @@ export const POST = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバーチェック
-    await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバーチェック（表示名をメール通知で使用）
+    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
 
     // 3. リクエストバリデーション
     const body = await request.json();
@@ -50,7 +51,12 @@ export const POST = withErrorHandler(
       parsed.data
     );
 
-    // 5. レスポンス返却
+    // 5. メール通知: 承認者全員に再申請を通知（fire-and-forget）
+    notifyResubmitted(orgId, currentMember.display_name).catch((err) => {
+      console.error("[メール通知エラー] 再申請通知の送信に失敗:", err);
+    });
+
+    // 6. レスポンス返却
     return NextResponse.json({ data: expense });
   }
 );

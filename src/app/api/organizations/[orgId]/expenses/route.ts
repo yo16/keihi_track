@@ -10,6 +10,7 @@ import { ApiError, withErrorHandler } from "@/lib/api/error";
 import { getMemberOrFail } from "@/lib/auth/guard";
 import { createExpense, getExpenses } from "@/lib/db/expenses";
 import { createExpenseSchema } from "@/lib/validators/expense";
+import { notifyNewExpense } from "@/lib/email/send-notification";
 
 /** POST: 経費を新規作成 */
 export const POST = withErrorHandler(
@@ -30,8 +31,8 @@ export const POST = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバーチェック
-    await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバーチェック（表示名をメール通知で使用）
+    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
 
     // 3. リクエストバリデーション
     const body = await request.json();
@@ -45,7 +46,12 @@ export const POST = withErrorHandler(
     // 4. DB操作: 経費を作成
     const expense = await createExpense(supabase, orgId, user.id, parsed.data);
 
-    // 5. レスポンス返却
+    // 5. メール通知: 承認者全員に新規申請を通知（fire-and-forget）
+    notifyNewExpense(orgId, currentMember.display_name).catch((err) => {
+      console.error("[メール通知エラー] 新規申請通知の送信に失敗:", err);
+    });
+
+    // 6. レスポンス返却
     return NextResponse.json({ data: expense }, { status: 201 });
   }
 );

@@ -9,6 +9,7 @@ import { ApiError, withErrorHandler } from "@/lib/api/error";
 import { getMemberOrFail, requireRole } from "@/lib/auth/guard";
 import { rejectExpense } from "@/lib/db/expenses";
 import { rejectExpenseSchema } from "@/lib/validators/expense";
+import { notifyRejected } from "@/lib/email/send-notification";
 
 /** POST: 経費を却下 */
 export const POST = withErrorHandler(
@@ -51,7 +52,17 @@ export const POST = withErrorHandler(
       parsed.data.comment
     );
 
-    // 5. レスポンス返却
+    // 5. メール通知: 申請者に却下を通知（fire-and-forget）
+    notifyRejected(
+      orgId,
+      expenseId,
+      expense.applicant_user_id,
+      parsed.data.comment
+    ).catch((err) => {
+      console.error("[メール通知エラー] 却下通知の送信に失敗:", err);
+    });
+
+    // 6. レスポンス返却
     return NextResponse.json({ data: expense });
   }
 );
