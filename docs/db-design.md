@@ -1430,11 +1430,12 @@ CREATE TRIGGER trg_expense_notification
 | 変数名 | 説明 | 使用箇所 |
 |--------|------|---------|
 | NEXT_PUBLIC_SUPABASE_URL | SupabaseプロジェクトのURL | クライアント・サーバー共通 |
-| NEXT_PUBLIC_SUPABASE_ANON_KEY | Supabaseの匿名キー（公開可） | クライアント側 |
-| SUPABASE_SERVICE_ROLE_KEY | Supabaseのサービスロールキー（秘匿） | サーバーサイドのみ |
+| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | Supabaseの公開キー（旧: anon key） | クライアント側 |
+| SUPABASE_SECRET_KEY | Supabaseの秘匿キー（旧: service_role key） | サーバーサイドのみ |
 
 注意:
+- 2025年以降の新規プロジェクトでは、従来の `anon key` / `service_role key` が `publishable key` / `secret key` に名称変更されている
 - `NEXT_PUBLIC_`プレフィックスが付いた変数はクライアント側に公開される
-- `SUPABASE_SERVICE_ROLE_KEY`はRLSをバイパスするため、サーバーサイド（API Route）でのみ使用
+- `SUPABASE_SECRET_KEY`はRLSをバイパスするため、サーバーサイド（API Route）でのみ使用
 - Vercelへのデプロイ時はVercelの環境変数設定で値を設定
 - ローカル開発では`.env.local`に設定（`.gitignore`に含まれていることを確認）
