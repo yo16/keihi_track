@@ -2,13 +2,14 @@
 
 /**
  * ヘッダーコンポーネント
- * ロゴ、通知ベル（プレースホルダー）、ユーザーメニュー、モバイルハンバーガーメニューを表示する
+ * ロゴ、通知ベル、ユーザーメニュー、モバイルハンバーガーメニューを表示する
  */
 import { useRouter } from "next/navigation";
-import { Bell, Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthContext } from "@/lib/contexts/auth-context";
-import { useNotificationContext } from "@/lib/contexts/notification-context";
+import { useNotifications } from "@/lib/hooks/use-notifications";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,7 +27,9 @@ interface HeaderProps {
 export function Header({ onToggleSidebar }: HeaderProps) {
   const router = useRouter();
   const { displayName } = useAuthContext();
-  const { unreadCount } = useNotificationContext();
+
+  // 通知ポーリングを開始する
+  useNotifications();
 
   // ログアウト処理
   const handleLogout = async () => {
@@ -55,21 +58,8 @@ export function Header({ onToggleSidebar }: HeaderProps) {
 
       {/* 右側のアクション群 */}
       <div className="ml-auto flex items-center gap-2">
-        {/* 通知ベルアイコン（プレースホルダー） */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label="通知"
-        >
-          <Bell className="size-5" />
-          {/* 未読バッジ */}
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
-        </Button>
+        {/* 通知ベルアイコン */}
+        <NotificationBell />
 
         {/* ユーザーメニュー */}
         <DropdownMenu>
