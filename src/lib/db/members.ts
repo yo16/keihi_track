@@ -140,11 +140,11 @@ export async function createMember(
     userId = existingUser.id;
   } else {
     // 新規ユーザー: inviteUserByEmailで招待メールを送信
-    // 招待リンククリック後、パスワード設定ページにリダイレクトする
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-    const redirectTo = appUrl
-      ? `${appUrl}/${orgId}/set-password`
-      : "";
+    // redirectToは固定パス /auth/callback にする
+    // （Supabaseダッシュボードの Redirect URLs に登録が必要）
+    // callback内でuser_metadataのorg_idを取得し、set-passwordページへ転送する
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const redirectTo = `${appUrl}/auth/callback`;
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
