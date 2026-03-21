@@ -14,8 +14,6 @@ export const GET = withErrorHandler(
     request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId } = await context.params;
-
     // 1. 認証チェック
     const supabase = await createClient();
     const {
@@ -27,8 +25,9 @@ export const GET = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバーチェック（所属していなければ403）
-    await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバーチェック（所属していなければ403）、orgIdを取得
+    const member = await getMemberOrFail(supabase, user.id);
+    const orgId = member.org_id;
 
     // 3. DB操作: 組織情報を取得
     const org = await getOrganization(supabase, orgId);

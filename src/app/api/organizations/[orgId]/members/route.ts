@@ -17,8 +17,6 @@ export const GET = withErrorHandler(
     request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId } = await context.params;
-
     // 1. 認証チェック
     const supabase = await createClient();
     const {
@@ -30,9 +28,10 @@ export const GET = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバー + adminロールチェック
-    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバー + adminロールチェック、orgIdを取得
+    const currentMember = await getMemberOrFail(supabase, user.id);
     requireRole(currentMember, "admin");
+    const orgId = currentMember.org_id;
 
     // 3. クエリパラメータからinclude_deletedを取得
     const { searchParams } = new URL(request.url);
@@ -52,8 +51,6 @@ export const POST = withErrorHandler(
     request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId } = await context.params;
-
     // 1. 認証チェック
     const supabase = await createClient();
     const {
@@ -65,9 +62,10 @@ export const POST = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバー + adminロールチェック
-    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバー + adminロールチェック、orgIdを取得
+    const currentMember = await getMemberOrFail(supabase, user.id);
     requireRole(currentMember, "admin");
+    const orgId = currentMember.org_id;
 
     // 3. リクエストバリデーション
     const body = await request.json();

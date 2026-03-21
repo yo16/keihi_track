@@ -15,7 +15,7 @@ export const POST = withErrorHandler(
     _request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId, expenseId } = await context.params;
+    const { expenseId } = await context.params;
 
     // 1. 認証チェック
     const supabase = await createClient();
@@ -28,8 +28,9 @@ export const POST = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバーチェック
-    await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバーチェック、orgIdを取得
+    const member = await getMemberOrFail(supabase, user.id);
+    const orgId = member.org_id;
 
     // 3. DB操作: 経費を取り下げ（本人チェックはDB関数内で実行）
     const expense = await withdrawExpense(supabase, orgId, expenseId, user.id);

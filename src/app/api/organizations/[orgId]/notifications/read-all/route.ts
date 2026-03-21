@@ -15,8 +15,6 @@ export const PATCH = withErrorHandler(
     _request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId } = await context.params;
-
     // 1. 認証チェック
     const supabase = await createClient();
     const {
@@ -28,8 +26,9 @@ export const PATCH = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバーチェック
-    await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバーチェック、orgIdを取得
+    const member = await getMemberOrFail(supabase, user.id);
+    const orgId = member.org_id;
 
     // 3. DB操作: 全通知を既読に更新
     const result = await markAllAsRead(supabase, orgId, user.id);

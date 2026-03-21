@@ -165,16 +165,20 @@ export async function createMember(
     invitationSent = true;
   }
 
-  // 既にアクティブメンバーとして登録済みかチェック
+  // 既にアクティブメンバーとして登録済みかチェック（1ユーザー1組織制約）
   const { data: existingMember } = await adminClient
     .from("organization_members")
     .select("org_id, user_id, deleted_at")
-    .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
     .maybeSingle();
 
   if (existingMember) {
+    // 別の組織に所属している場合はエラー
+    if (existingMember.org_id !== orgId) {
+      throw new ApiError(409, "CONFLICT", "このメールアドレスは既に別の組織に所属しています");
+    }
+    // 同じ組織に既に所属している場合
     throw new ApiError(409, "CONFLICT", "既にこの組織のアクティブメンバーとして登録されています");
   }
 

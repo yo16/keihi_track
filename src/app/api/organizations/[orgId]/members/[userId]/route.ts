@@ -21,7 +21,7 @@ export const PATCH = withErrorHandler(
     request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId, userId } = await context.params;
+    const { userId } = await context.params;
 
     // 1. 認証チェック
     const supabase = await createClient();
@@ -34,9 +34,10 @@ export const PATCH = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバー + adminロールチェック
-    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバー + adminロールチェック、orgIdを取得
+    const currentMember = await getMemberOrFail(supabase, user.id);
     requireRole(currentMember, "admin");
+    const orgId = currentMember.org_id;
 
     // 3. 自分自身のロール変更は不可
     requireNotSelf(user.id, userId);
@@ -70,7 +71,7 @@ export const DELETE = withErrorHandler(
     request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId, userId } = await context.params;
+    const { userId } = await context.params;
 
     // 1. 認証チェック
     const supabase = await createClient();
@@ -83,9 +84,10 @@ export const DELETE = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバー + adminロールチェック
-    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバー + adminロールチェック、orgIdを取得
+    const currentMember = await getMemberOrFail(supabase, user.id);
     requireRole(currentMember, "admin");
+    const orgId = currentMember.org_id;
 
     // 3. DB操作: メンバーを論理削除
     const deleted = await deleteMember(supabase, orgId, userId);

@@ -7,7 +7,7 @@
 なし
 
 ## 前提条件
-- `/batch-design` によるDB設計が完了し、`docs/db-design.md` が存在すること
+- `/batch-design` による設計が完了し、`docs/design.md` と `docs/db-design.md` が存在すること
 - `task-decomposer` によるタスク分解が完了し、Beadsタスクが登録されていること
 
 ## 使用するサブエージェント
@@ -21,7 +21,7 @@
 ### 1. 前提確認
 - `git branch --show-current` で現在 `dev` ブランチにいることを確認する
 - `dev` ブランチにいない場合はエラーで停止する
-- `docs/db-design.md` の存在を確認する（存在しない場合は `/batch-design` の実行を案内して停止する）
+- `docs/design.md` と `docs/db-design.md` の存在を確認する（存在しない場合は `/batch-design` の実行を案内して停止する）
 
 ### 2. 実行計画の作成 → `task-planner`
 - オープンなBeadsタスクを取得する

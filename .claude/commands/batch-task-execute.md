@@ -29,6 +29,7 @@
 ### 4. コーディング → `coder` + `db-coder` + `supabase-specialist`
 - Beadsタスクのtitle, description, notesを渡し、タスク内容を伝える
 - `docs/specification.md` を参照し、関連する仕様を理解させる
+- `docs/design.md` を参照し、アプリケーション設計を理解させる
 - `docs/db-design.md` を参照し、DB設計・API仕様を理解させる
 - `coder` がタスクの実装を主導する:
   - APIエンドポイント、ビジネスロジック、フロントエンドの実装

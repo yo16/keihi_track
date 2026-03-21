@@ -15,17 +15,17 @@ const ROLE_HIERARCHY: Record<Role, number> = {
 
 /**
  * 組織メンバーを取得する
+ * user_idのみで検索（UNIQUE制約により1件のみヒット）
  * 未所属または削除済みの場合は403エラーをスローする
+ * 戻り値にorg_idが含まれるため、呼び出し元でorgIdを特定できる
  */
 export async function getMemberOrFail(
   supabase: SupabaseClient,
-  orgId: string,
   userId: string
 ): Promise<OrganizationMember> {
   const { data, error } = await supabase
     .from("organization_members")
     .select("*")
-    .eq("org_id", orgId)
     .eq("user_id", userId)
     .is("deleted_at", null)
     .single();

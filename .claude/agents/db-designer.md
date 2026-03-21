@@ -86,6 +86,7 @@ model: inherit
 
 ## 参照すべきドキュメント
 - `docs/specification.md` : アプリケーション仕様
+- `docs/design.md` : アプリケーション設計書
 - `docs/db-design.md` : DB設計書（出力先でもある）
 - `CLAUDE.md` : プロジェクトルール
 

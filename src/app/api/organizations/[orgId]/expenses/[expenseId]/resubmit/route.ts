@@ -17,7 +17,7 @@ export const POST = withErrorHandler(
     request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
-    const { orgId, expenseId } = await context.params;
+    const { expenseId } = await context.params;
 
     // 1. 認証チェック
     const supabase = await createClient();
@@ -30,8 +30,9 @@ export const POST = withErrorHandler(
       throw new ApiError(401, "UNAUTHORIZED", "認証が必要です");
     }
 
-    // 2. 組織メンバーチェック（表示名をメール通知で使用）
-    const currentMember = await getMemberOrFail(supabase, orgId, user.id);
+    // 2. 組織メンバーチェック（表示名をメール通知で使用）、orgIdを取得
+    const currentMember = await getMemberOrFail(supabase, user.id);
+    const orgId = currentMember.org_id;
 
     // 3. リクエストバリデーション
     const body = await request.json();

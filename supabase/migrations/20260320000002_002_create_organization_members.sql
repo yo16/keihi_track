@@ -9,15 +9,11 @@ CREATE TABLE organization_members (
   deleted_at            TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (org_id, user_id)
+  PRIMARY KEY (org_id, user_id),
+  UNIQUE (user_id)
 );
 
 -- 組織内のアクティブメンバー一覧取得
 CREATE INDEX idx_org_members_active
   ON organization_members (org_id)
-  WHERE deleted_at IS NULL;
-
--- ユーザーの所属組織一覧取得
-CREATE INDEX idx_org_members_by_user
-  ON organization_members (user_id)
   WHERE deleted_at IS NULL;
