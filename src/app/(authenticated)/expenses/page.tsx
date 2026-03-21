@@ -100,7 +100,7 @@ export default function ExpensesPage() {
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">経費申請一覧</h1>
-        <Button onClick={() => router.push(`/${orgId}/expenses/new`)}>
+        <Button onClick={() => router.push("/expenses/new")}>
           新規申請
         </Button>
       </div>

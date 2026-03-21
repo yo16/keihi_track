@@ -90,7 +90,7 @@ export default function ApprovalsPage() {
 
   /** 行クリックで経費詳細ページへ遷移 */
   const handleRowClick = (expenseId: string) => {
-    router.push(`/${orgId}/expenses/${expenseId}`);
+    router.push(`/expenses/${expenseId}`);
   };
 
   return (

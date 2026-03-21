@@ -1,17 +1,18 @@
 "use client";
 
 /**
- * 汎用ログインフォーム
- * 組織ID + メールアドレス + パスワードの3項目入力
+ * ログインフォーム
+ * メールアドレス + パスワードの2項目入力（orgIdフィールドなし）
+ * ログイン成功後、GET /api/me でorgId+ロール取得後 /dashboard へリダイレクト
  * React Hook Form + Zodバリデーション、shadcn/ui Card内に配置
  */
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { loginSchema, type LoginInput } from "@/lib/validators/login";
+import { loginSchema, type LoginInput } from "@/lib/validators/auth";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +27,12 @@ import {
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // クエリパラメータからメッセージを取得（パスワード設定完了時など）
+  const message = searchParams.get("message");
 
   const {
     register,
@@ -36,7 +41,6 @@ export function LoginForm() {
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      orgId: "",
       email: "",
       password: "",
     },
@@ -61,8 +65,15 @@ export function LoginForm() {
         return;
       }
 
-      // ログイン成功後、ダッシュボードへ遷移
-      router.push(`/${data.orgId}/dashboard`);
+      // ログイン成功後、/api/me でorgId+ロール確認してダッシュボードへ遷移
+      const meResponse = await fetch("/api/me");
+      if (!meResponse.ok) {
+        setServerError("ユーザー情報の取得に失敗しました。組織に所属していない可能性があります。");
+        return;
+      }
+
+      // ダッシュボードへ遷移
+      router.push("/dashboard");
     } catch {
       setServerError("ログイン処理中にエラーが発生しました");
     } finally {
@@ -77,22 +88,14 @@ export function LoginForm() {
         <CardDescription>経費管理システムにログイン</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          {/* 組織ID入力 */}
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="orgId">組織ID</Label>
-            <Input
-              id="orgId"
-              type="text"
-              placeholder="組織IDを入力"
-              {...register("orgId")}
-              aria-invalid={!!errors.orgId}
-            />
-            {errors.orgId && (
-              <p className="text-xs text-destructive">{errors.orgId.message}</p>
-            )}
-          </div>
+        {/* メッセージ表示（パスワード設定完了時など） */}
+        {message && (
+          <p className="text-sm text-green-600 bg-green-50 px-4 py-2 rounded mb-4">
+            {message}
+          </p>
+        )}
 
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           {/* メールアドレス入力 */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">メールアドレス</Label>

@@ -25,9 +25,9 @@ export default function AdminMembersPage() {
   // admin以外はダッシュボードへリダイレクト
   useEffect(() => {
     if (role !== "admin") {
-      router.replace(`/${orgId}/dashboard`);
+      router.replace("/dashboard");
     }
-  }, [role, orgId, router]);
+  }, [role, router]);
 
   /** メンバー一覧をAPIから取得する */
   const fetchMembers = useCallback(async () => {

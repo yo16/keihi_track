@@ -77,9 +77,6 @@ export function CreateOrgDialog() {
         return;
       }
 
-      const result = await response.json();
-      const orgId = result.data?.organization?.id;
-
       // 2. クライアントでログイン（セッションCookieを取得）
       const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -93,9 +90,7 @@ export function CreateOrgDialog() {
       }
 
       // 3. ダッシュボードへ遷移
-      if (orgId) {
-        router.push(`/${orgId}/dashboard`);
-      }
+      router.push("/dashboard");
     } catch {
       setServerError("組織作成処理中にエラーが発生しました");
     } finally {

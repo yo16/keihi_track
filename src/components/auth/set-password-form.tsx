@@ -4,6 +4,7 @@
  * 招待パスワード設定フォーム
  * 招待リンクからリダイレクトされたユーザーが初回パスワードを設定する
  * React Hook Form + Zod バリデーション（changePasswordSchema を流用）
+ * orgIdに依存しない。設定完了後はトップページへリダイレクト
  */
 
 import { useState } from "react";
@@ -27,11 +28,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 
-interface SetPasswordFormProps {
-  orgId: string;
-}
-
-export function SetPasswordForm({ orgId }: SetPasswordFormProps) {
+export function SetPasswordForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,9 +78,9 @@ export function SetPasswordForm({ orgId }: SetPasswordFormProps) {
         return;
       }
 
-      // 成功後、ログインページへリダイレクト（メッセージ付き）
+      // 成功後、トップページへリダイレクト（メッセージ付き）
       router.push(
-        `/${orgId}/login?message=${encodeURIComponent("パスワードが設定されました。ログインしてください。")}`
+        `/?message=${encodeURIComponent("パスワードが設定されました。ログインしてください。")}`
       );
     } catch {
       setServerError("パスワード設定処理中にエラーが発生しました");

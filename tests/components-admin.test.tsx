@@ -399,7 +399,7 @@ describe("AdminMembersPage", () => {
     });
 
     const mod = await import(
-      "../src/app/[orgId]/(authenticated)/admin/members/page"
+      "../src/app/(authenticated)/admin/members/page"
     );
     AdminMembersPage = mod.default;
   });

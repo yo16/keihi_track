@@ -5,18 +5,15 @@
  * Supabase Authの招待リンクからリダイレクトされるページ
  * URLのハッシュフラグメント（#access_token=...&type=invite）からセッションを復元し、
  * パスワード設定フォームを表示する
+ * orgIdに依存しないシンプルなページ
  */
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { SetPasswordForm } from "@/components/auth/set-password-form";
 
 export default function SetPasswordPage() {
-  const params = useParams<{ orgId: string }>();
-  const orgId = params.orgId;
-
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,7 +96,7 @@ export default function SetPasswordPage() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center p-4">
       <main className="flex flex-col items-center gap-4">
-        <SetPasswordForm orgId={orgId} />
+        <SetPasswordForm />
       </main>
     </div>
   );

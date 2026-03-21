@@ -281,7 +281,7 @@ describe("DashboardPage", () => {
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/[orgId]/(authenticated)/dashboard/page"
+      "../src/app/(authenticated)/dashboard/page"
     );
     DashboardPage = mod.default;
   });
@@ -293,27 +293,27 @@ describe("DashboardPage", () => {
       </TestWrapper>
     );
 
-    expect(mockReplace).toHaveBeenCalledWith("/org-1/expenses");
+    expect(mockReplace).toHaveBeenCalledWith("/expenses");
   });
 
-  it("approverロールの場合、/{orgId}/approvals にリダイレクトすること", () => {
+  it("approverロールの場合、/approvals にリダイレクトすること", () => {
     render(
       <TestWrapper authValue={{ ...defaultAuthValue, role: "approver" }}>
         <DashboardPage />
       </TestWrapper>
     );
 
-    expect(mockReplace).toHaveBeenCalledWith("/org-1/approvals");
+    expect(mockReplace).toHaveBeenCalledWith("/approvals");
   });
 
-  it("adminロールの場合、/{orgId}/admin/members にリダイレクトすること", () => {
+  it("adminロールの場合、/admin/members にリダイレクトすること", () => {
     render(
       <TestWrapper authValue={{ ...defaultAuthValue, role: "admin" }}>
         <DashboardPage />
       </TestWrapper>
     );
 
-    expect(mockReplace).toHaveBeenCalledWith("/org-1/admin/members");
+    expect(mockReplace).toHaveBeenCalledWith("/admin/members");
   });
 
   it("リダイレクト中の表示が出ること", () => {

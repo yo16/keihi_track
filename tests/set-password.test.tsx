@@ -1,6 +1,7 @@
 /**
  * パスワード設定機能のテスト
  * SetPasswordForm コンポーネントのレンダリングとインタラクションを検証する
+ * orgIdに依存しない新しいバージョン
  *
  * @jest-environment jsdom
  */
@@ -10,14 +11,8 @@ import "@testing-library/jest-dom";
 
 // モック: next/navigation
 const mockPush = jest.fn();
-const mockUseParams = jest.fn(() => ({ orgId: "test-org" }));
-const mockUseSearchParams = jest.fn(() => ({
-  get: jest.fn(() => null),
-}));
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-  useParams: () => mockUseParams(),
-  useSearchParams: () => mockUseSearchParams(),
 }));
 
 // モック: Supabaseクライアント
@@ -52,7 +47,7 @@ beforeEach(() => {
 // ── SetPasswordForm ──
 
 describe("SetPasswordForm", () => {
-  let SetPasswordForm: React.ComponentType<{ orgId: string }>;
+  let SetPasswordForm: React.ComponentType;
 
   beforeAll(async () => {
     const mod = await import(
@@ -62,14 +57,14 @@ describe("SetPasswordForm", () => {
   });
 
   it("新しいパスワードとパスワード確認の入力フィールドが表示されること", () => {
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     expect(screen.getByLabelText("新しいパスワード")).toBeInTheDocument();
     expect(screen.getByLabelText("パスワード確認")).toBeInTheDocument();
   });
 
   it("パスワードを設定ボタンが表示されること", () => {
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     expect(
       screen.getByRole("button", { name: "パスワードを設定" })
@@ -77,13 +72,13 @@ describe("SetPasswordForm", () => {
   });
 
   it("タイトルが表示されること", () => {
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     expect(screen.getByText("パスワード設定")).toBeInTheDocument();
   });
 
   it("説明文が表示されること", () => {
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     expect(
       screen.getByText("新しいパスワードを設定してください")
@@ -91,7 +86,7 @@ describe("SetPasswordForm", () => {
   });
 
   it("パスワードが8文字未満の場合バリデーションエラーが表示されること", async () => {
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     const passwordInput = screen.getByLabelText("新しいパスワード");
     const confirmInput = screen.getByLabelText("パスワード確認");
@@ -111,7 +106,7 @@ describe("SetPasswordForm", () => {
   });
 
   it("パスワードが一致しない場合バリデーションエラーが表示されること", async () => {
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     const passwordInput = screen.getByLabelText("新しいパスワード");
     const confirmInput = screen.getByLabelText("パスワード確認");
@@ -136,7 +131,7 @@ describe("SetPasswordForm", () => {
       error: null,
     });
 
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     const passwordInput = screen.getByLabelText("新しいパスワード");
     const confirmInput = screen.getByLabelText("パスワード確認");
@@ -157,14 +152,14 @@ describe("SetPasswordForm", () => {
     });
   });
 
-  it("パスワード設定成功後ログインページにリダイレクトされること", async () => {
+  it("パスワード設定成功後トップページにリダイレクトされること", async () => {
     mockGetSession.mockResolvedValue({
       data: { session: { access_token: "test-token" } },
       error: null,
     });
     mockUpdateUser.mockResolvedValue({ data: {}, error: null });
 
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     const passwordInput = screen.getByLabelText("新しいパスワード");
     const confirmInput = screen.getByLabelText("パスワード確認");
@@ -181,7 +176,7 @@ describe("SetPasswordForm", () => {
         password: "password123",
       });
       expect(mockPush).toHaveBeenCalledWith(
-        expect.stringContaining("/test-org/login?message=")
+        expect.stringContaining("/?message=")
       );
     });
   });
@@ -196,7 +191,7 @@ describe("SetPasswordForm", () => {
       error: { message: "Update failed" },
     });
 
-    render(<SetPasswordForm orgId="test-org" />);
+    render(<SetPasswordForm />);
 
     const passwordInput = screen.getByLabelText("新しいパスワード");
     const confirmInput = screen.getByLabelText("パスワード確認");
@@ -225,7 +220,7 @@ describe("SetPasswordPage", () => {
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/[orgId]/(public)/set-password/page"
+      "../src/app/set-password/page"
     );
     SetPasswordPage = mod.default;
   });
@@ -267,46 +262,5 @@ describe("SetPasswordPage", () => {
         )
       ).toBeInTheDocument();
     });
-  });
-});
-
-// ── ログインページのメッセージ表示 ──
-
-describe("OrgLoginPage（メッセージ表示）", () => {
-  it("messageクエリパラメータがある場合メッセージが表示されること", async () => {
-    // メッセージ付きの searchParams をモック
-    mockUseSearchParams.mockReturnValue({
-      get: (key: string) =>
-        key === "message"
-          ? "パスワードが設定されました。ログインしてください。"
-          : null,
-    });
-
-    // fetch のモック（組織情報取得用）
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          data: { name: "テスト組織", display_name: "テスト組織" },
-        }),
-    });
-
-    const mod = await import(
-      "../src/app/[orgId]/(public)/login/page"
-    );
-    const OrgLoginPage = mod.default;
-
-    render(<OrgLoginPage />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "パスワードが設定されました。ログインしてください。"
-        )
-      ).toBeInTheDocument();
-    });
-
-    // fetch モックのクリーンアップ
-    (global.fetch as jest.Mock).mockRestore();
   });
 });

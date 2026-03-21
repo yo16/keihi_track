@@ -1,6 +1,6 @@
 /**
  * 認証コンポーネントのテスト
- * LoginForm, OrgLoginForm, ChangePasswordForm, CreateOrgDialog の
+ * LoginForm, ChangePasswordForm の
  * レンダリングと基本的なインタラクションを検証する
  *
  * 注: React Testing Library と Jest DOM のセットアップが必要
@@ -12,10 +12,12 @@ import "@testing-library/jest-dom";
 
 // モック: next/navigation
 const mockPush = jest.fn();
-const mockUseParams = jest.fn(() => ({ orgId: "test-org" }));
+const mockUseSearchParams = jest.fn(() => ({
+  get: jest.fn(() => null),
+}));
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-  useParams: () => mockUseParams(),
+  useSearchParams: () => mockUseSearchParams(),
 }));
 
 // モック: Supabaseクライアント
@@ -45,12 +47,17 @@ describe("LoginForm", () => {
     LoginForm = mod.LoginForm;
   });
 
-  it("組織ID、メールアドレス、パスワードの入力フィールドが表示されること", () => {
+  it("メールアドレスとパスワードの入力フィールドが表示されること", () => {
     render(<LoginForm />);
 
-    expect(screen.getByLabelText("組織ID")).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toBeInTheDocument();
     expect(screen.getByLabelText("パスワード")).toBeInTheDocument();
+  });
+
+  it("組織IDの入力フィールドは表示されないこと", () => {
+    render(<LoginForm />);
+
+    expect(screen.queryByLabelText("組織ID")).not.toBeInTheDocument();
   });
 
   it("ログインボタンが表示されること", () => {
@@ -66,43 +73,22 @@ describe("LoginForm", () => {
 
     expect(screen.getByText("ケイトラ")).toBeInTheDocument();
   });
-});
 
-// ── OrgLoginForm ──
+  it("messageクエリパラメータがある場合メッセージが表示されること", () => {
+    mockUseSearchParams.mockReturnValue({
+      get: (key: string) =>
+        key === "message"
+          ? "パスワードが設定されました。ログインしてください。"
+          : null,
+    });
 
-describe("OrgLoginForm", () => {
-  let OrgLoginForm: React.ComponentType<{ orgId: string; orgName: string }>;
-
-  beforeAll(async () => {
-    const mod = await import("../src/components/auth/org-login-form");
-    OrgLoginForm = mod.OrgLoginForm;
-  });
-
-  it("メールアドレスとパスワードの入力フィールドが表示されること", () => {
-    render(<OrgLoginForm orgId="test-org" orgName="テスト組織" />);
-
-    expect(screen.getByLabelText("メールアドレス")).toBeInTheDocument();
-    expect(screen.getByLabelText("パスワード")).toBeInTheDocument();
-  });
-
-  it("組織名が表示されること", () => {
-    render(<OrgLoginForm orgId="test-org" orgName="テスト組織" />);
-
-    expect(screen.getByText("テスト組織")).toBeInTheDocument();
-  });
-
-  it("ログインボタンが表示されること", () => {
-    render(<OrgLoginForm orgId="test-org" orgName="テスト組織" />);
+    render(<LoginForm />);
 
     expect(
-      screen.getByRole("button", { name: "ログイン" })
+      screen.getByText(
+        "パスワードが設定されました。ログインしてください。"
+      )
     ).toBeInTheDocument();
-  });
-
-  it("組織IDの入力フィールドは表示されないこと", () => {
-    render(<OrgLoginForm orgId="test-org" orgName="テスト組織" />);
-
-    expect(screen.queryByLabelText("組織ID")).not.toBeInTheDocument();
   });
 });
 

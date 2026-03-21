@@ -9,7 +9,7 @@ import {
 } from "../src/lib/validators/expense";
 import { createMemberSchema, changeRoleSchema } from "../src/lib/validators/member";
 import { createOrganizationSchema } from "../src/lib/validators/organization";
-import { changePasswordSchema } from "../src/lib/validators/auth";
+import { changePasswordSchema, loginSchema } from "../src/lib/validators/auth";
 
 // ── 経費バリデーション ──
 
@@ -209,6 +209,53 @@ describe("createOrganizationSchema", () => {
 });
 
 // ── 認証バリデーション ──
+
+describe("loginSchema", () => {
+  const validData = {
+    email: "user@example.com",
+    password: "password123",
+  };
+
+  it("正常なデータをパースできること", () => {
+    const result = loginSchema.safeParse(validData);
+    expect(result.success).toBe(true);
+  });
+
+  it("emailが空文字の場合エラーになること", () => {
+    const result = loginSchema.safeParse({ ...validData, email: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("emailが不正な形式の場合エラーになること", () => {
+    const result = loginSchema.safeParse({ ...validData, email: "not-email" });
+    expect(result.success).toBe(false);
+  });
+
+  it("passwordが空文字の場合エラーになること", () => {
+    const result = loginSchema.safeParse({ ...validData, password: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("emailが未指定の場合エラーになること", () => {
+    const result = loginSchema.safeParse({ password: "password123" });
+    expect(result.success).toBe(false);
+  });
+
+  it("passwordが未指定の場合エラーになること", () => {
+    const result = loginSchema.safeParse({ email: "user@example.com" });
+    expect(result.success).toBe(false);
+  });
+
+  it("orgIdフィールドが不要であること", () => {
+    // orgIdを付けてもパースは成功するが、結果にorgIdは含まれない
+    const dataWithOrgId = { ...validData, orgId: "test-org" };
+    const result = loginSchema.safeParse(dataWithOrgId);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect("orgId" in result.data).toBe(false);
+    }
+  });
+});
 
 describe("changePasswordSchema", () => {
   it("正常なデータをパースできること", () => {
