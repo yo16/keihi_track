@@ -55,7 +55,7 @@ interface MemberListProps {
 }
 
 export function MemberList({ members, onRefresh }: MemberListProps) {
-  const { userId, orgId } = useAuthContext();
+  const { userId } = useAuthContext();
 
   // ロール変更ダイアログの状態
   const [roleChangeTarget, setRoleChangeTarget] =
@@ -90,7 +90,7 @@ export function MemberList({ members, onRefresh }: MemberListProps) {
 
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/members/${deleteTarget.user_id}`,
+        `/api/members/${deleteTarget.user_id}`,
         { method: "DELETE" }
       );
 
@@ -111,7 +111,7 @@ export function MemberList({ members, onRefresh }: MemberListProps) {
     } finally {
       setIsDeleting(false);
     }
-  }, [deleteTarget, orgId, onRefresh]);
+  }, [deleteTarget, onRefresh]);
 
   // メンバーが0件の場合
   if (members.length === 0) {

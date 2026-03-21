@@ -11,7 +11,7 @@ import "@testing-library/jest-dom";
 // モック: next/navigation
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
-const mockPathname = jest.fn(() => "/org-1/expenses");
+const mockPathname = jest.fn(() => "/expenses");
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => mockPathname(),
@@ -71,7 +71,7 @@ beforeEach(() => {
   mockPush.mockClear();
   mockReplace.mockClear();
   mockSignOut.mockClear();
-  mockPathname.mockReturnValue("/org-1/expenses");
+  mockPathname.mockReturnValue("/expenses");
 });
 
 // ── Header ──
@@ -217,7 +217,7 @@ describe("Sidebar", () => {
   });
 
   it("現在のパスにマッチするメニュー項目がハイライトされること", () => {
-    mockPathname.mockReturnValue("/org-1/expenses");
+    mockPathname.mockReturnValue("/expenses");
 
     render(
       <TestWrapper>
@@ -253,23 +253,23 @@ describe("Sidebar", () => {
 
     expect(screen.getByText("経費申請").closest("a")).toHaveAttribute(
       "href",
-      "/org-1/expenses/new"
+      "/expenses/new"
     );
     expect(screen.getByText("申請一覧").closest("a")).toHaveAttribute(
       "href",
-      "/org-1/expenses"
+      "/expenses"
     );
     expect(screen.getByText("承認待ち").closest("a")).toHaveAttribute(
       "href",
-      "/org-1/approvals"
+      "/approvals"
     );
     expect(screen.getByText("経費レポート").closest("a")).toHaveAttribute(
       "href",
-      "/org-1/reports"
+      "/reports"
     );
     expect(screen.getByText("ユーザー管理").closest("a")).toHaveAttribute(
       "href",
-      "/org-1/admin/members"
+      "/admin/members"
     );
   });
 });
@@ -286,7 +286,7 @@ describe("DashboardPage", () => {
     DashboardPage = mod.default;
   });
 
-  it("userロールの場合、/{orgId}/expenses にリダイレクトすること", () => {
+  it("userロールの場合、/expenses にリダイレクトすること", () => {
     render(
       <TestWrapper authValue={{ ...defaultAuthValue, role: "user" }}>
         <DashboardPage />

@@ -5,7 +5,6 @@
  * 選択された経費IDのデータをCSVファイルとしてダウンロードする
  */
 import { useState } from "react";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { generateCsv, downloadCsv } from "@/lib/utils/csv-export";
 import type { CsvExpenseRow } from "@/lib/utils/csv-export";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ interface CsvExportButtonProps {
 
 /** CSV出力ボタン（選択件数表示付き） */
 export function CsvExportButton({ selectedIds }: CsvExportButtonProps) {
-  const { orgId } = useAuthContext();
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +31,7 @@ export function CsvExportButton({ selectedIds }: CsvExportButtonProps) {
     try {
       // CSV用データをAPIから取得
       const response = await fetch(
-        `/api/organizations/${orgId}/expenses/csv`,
+        "/api/expenses/csv",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

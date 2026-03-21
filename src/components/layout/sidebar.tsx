@@ -48,37 +48,37 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { role, orgId } = useAuthContext();
+  const { role } = useAuthContext();
 
-  // メニュー項目の定義
+  // メニュー項目の定義（orgIdなしの固定パス）
   const menuItems: MenuItem[] = [
     {
       label: "経費申請",
-      href: `/${orgId}/expenses/new`,
+      href: "/expenses/new",
       icon: <PlusCircle className="size-4" />,
       minRole: "user",
     },
     {
       label: "申請一覧",
-      href: `/${orgId}/expenses`,
+      href: "/expenses",
       icon: <List className="size-4" />,
       minRole: "user",
     },
     {
       label: "承認待ち",
-      href: `/${orgId}/approvals`,
+      href: "/approvals",
       icon: <CheckSquare className="size-4" />,
       minRole: "approver",
     },
     {
       label: "経費レポート",
-      href: `/${orgId}/reports`,
+      href: "/reports",
       icon: <BarChart3 className="size-4" />,
       minRole: "approver",
     },
     {
       label: "ユーザー管理",
-      href: `/${orgId}/admin/members`,
+      href: "/admin/members",
       icon: <Users className="size-4" />,
       minRole: "admin",
     },

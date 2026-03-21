@@ -423,7 +423,7 @@ describe("AdminMembersPage", () => {
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
-        "/api/organizations/test-org-id/members?include_deleted=true"
+        "/api/members?include_deleted=true"
       );
     });
   });

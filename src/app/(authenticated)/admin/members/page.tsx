@@ -16,7 +16,7 @@ import type { MemberResponse } from "@/types/member";
 
 export default function AdminMembersPage() {
   const router = useRouter();
-  const { orgId, role } = useAuthContext();
+  const { role } = useAuthContext();
   const [members, setMembers] = useState<MemberResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function AdminMembersPage() {
   const fetchMembers = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/members?include_deleted=true`
+        "/api/members?include_deleted=true"
       );
 
       if (!response.ok) {
@@ -47,7 +47,7 @@ export default function AdminMembersPage() {
         err instanceof Error ? err.message : "メンバー一覧の取得に失敗しました";
       setError(message);
     }
-  }, [orgId]);
+  }, []);
 
   // 初回ロード
   useEffect(() => {

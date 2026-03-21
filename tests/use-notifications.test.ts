@@ -9,7 +9,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 
 // モック: next/navigation
-let mockPathname = "/org-1/expenses";
+let mockPathname = "/expenses";
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
   usePathname: () => mockPathname,
@@ -49,7 +49,7 @@ global.fetch = mockFetch;
 beforeEach(() => {
   mockFetch.mockClear();
   mockSetUnreadCount.mockClear();
-  mockPathname = "/org-1/expenses";
+  mockPathname = "/expenses";
   jest.useFakeTimers();
 });
 
@@ -79,7 +79,7 @@ describe("useNotifications", () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/organizations/org-1/notifications/unread-count"
+      "/api/notifications/unread-count"
     );
     expect(mockSetUnreadCount).toHaveBeenCalledWith(3);
   });
@@ -107,7 +107,7 @@ describe("useNotifications", () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/organizations/org-1/notifications/unread-count"
+      "/api/notifications/unread-count"
     );
   });
 

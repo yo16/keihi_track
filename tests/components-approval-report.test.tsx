@@ -16,8 +16,8 @@ jest.mock("next/navigation", () => ({
     replace: jest.fn(),
     refresh: mockRefresh,
   }),
-  usePathname: () => "/org-1/expenses",
-  useParams: () => ({ orgId: "org-1", expenseId: "exp-1" }),
+  usePathname: () => "/expenses",
+  useParams: () => ({ expenseId: "exp-1" }),
 }));
 
 // モック: Supabaseクライアント

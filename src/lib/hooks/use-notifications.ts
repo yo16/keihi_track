@@ -7,14 +7,12 @@
  */
 import { useEffect, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { useNotificationContext } from "@/lib/contexts/notification-context";
 
 /** ポーリング間隔（ミリ秒） */
 const POLLING_INTERVAL_MS = 30_000;
 
 export function useNotifications() {
-  const { orgId } = useAuthContext();
   const { setUnreadCount } = useNotificationContext();
   const pathname = usePathname();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -23,7 +21,7 @@ export function useNotifications() {
   const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/notifications/unread-count`
+        "/api/notifications/unread-count"
       );
       if (!response.ok) {
         return;
@@ -36,7 +34,7 @@ export function useNotifications() {
     } catch {
       // ネットワークエラー等は静かに無視する（次回ポーリングで再取得）
     }
-  }, [orgId, setUnreadCount]);
+  }, [setUnreadCount]);
 
   // 30秒間隔のポーリングを設定する
   useEffect(() => {

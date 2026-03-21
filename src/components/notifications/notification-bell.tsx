@@ -6,18 +6,16 @@
  */
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { useNotificationContext } from "@/lib/contexts/notification-context";
 import { Button } from "@/components/ui/button";
 
 export function NotificationBell() {
   const router = useRouter();
-  const { orgId } = useAuthContext();
   const { unreadCount } = useNotificationContext();
 
   // 通知一覧ページへ遷移する
   const handleClick = () => {
-    router.push(`/${orgId}/notifications`);
+    router.push("/notifications");
   };
 
   return (

@@ -166,10 +166,11 @@ export function ExpenseForm({ mode, initialData }: ExpenseFormProps) {
       };
 
       // APIエンドポイントの決定
+      // APIエンドポイントの決定（orgIdなしのフラットURL）
       const endpoint =
         mode === "new"
-          ? `/api/organizations/${orgId}/expenses`
-          : `/api/organizations/${orgId}/expenses/${initialData?.expenseId}/resubmit`;
+          ? "/api/expenses"
+          : `/api/expenses/${initialData?.expenseId}/resubmit`;
 
       // API呼び出し
       const response = await fetch(endpoint, {
@@ -186,7 +187,7 @@ export function ExpenseForm({ mode, initialData }: ExpenseFormProps) {
       }
 
       // 成功時: 一覧ページへリダイレクト
-      router.push(`/${orgId}/expenses`);
+      router.push("/expenses");
       router.refresh();
     } catch (error) {
       const message =

@@ -7,7 +7,6 @@
  */
 
 import { useState } from "react";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +51,6 @@ export function RoleChangeDialog({
   member,
   onChanged,
 }: RoleChangeDialogProps) {
-  const { orgId } = useAuthContext();
   const [newRole, setNewRole] = useState<Role | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +64,7 @@ export function RoleChangeDialog({
 
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/members/${member.user_id}`,
+        `/api/members/${member.user_id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

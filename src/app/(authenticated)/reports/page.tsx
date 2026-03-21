@@ -5,7 +5,6 @@
  * 承認者向け: フィルター + チェックボックス選択 + CSV出力
  */
 import { useEffect, useState, useCallback } from "react";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils/format";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ExpenseFilters } from "@/components/expenses/expense-filters";
@@ -39,7 +38,6 @@ interface ReportExpense {
 }
 
 export default function ReportsPage() {
-  const { orgId } = useAuthContext();
   const [expenses, setExpenses] = useState<ReportExpense[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hasMore, setHasMore] = useState(false);
@@ -75,7 +73,7 @@ export default function ReportsPage() {
       }
 
       const query = params.toString();
-      const url = `/api/organizations/${orgId}/expenses${query ? `?${query}` : ""}`;
+      const url = `/api/expenses${query ? `?${query}` : ""}`;
 
       const response = await fetch(url);
       if (!response.ok) {
@@ -91,7 +89,7 @@ export default function ReportsPage() {
         },
       };
     },
-    [orgId]
+    []
   );
 
   /** フィルター適用時に初回ロード */

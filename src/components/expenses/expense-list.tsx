@@ -5,7 +5,6 @@
  * デスクトップではテーブル表示、モバイルではカード表示に切り替え
  */
 import { useRouter } from "next/navigation";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils/format";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
@@ -39,11 +38,9 @@ export function ExpenseList({
   isLoadingMore = false,
 }: ExpenseListProps) {
   const router = useRouter();
-  const { orgId } = useAuthContext();
-
   /** 行クリックで詳細ページへ遷移 */
   const handleRowClick = (expenseId: string) => {
-    router.push(`/${orgId}/expenses/${expenseId}`);
+    router.push(`/expenses/${expenseId}`);
   };
 
   if (expenses.length === 0) {

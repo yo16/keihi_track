@@ -6,14 +6,12 @@
  */
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { ExpenseList } from "@/components/expenses/expense-list";
 import { Button } from "@/components/ui/button";
 import type { Expense } from "@/types/database";
 
 export default function ExpensesPage() {
   const router = useRouter();
-  const { orgId } = useAuthContext();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -31,7 +29,7 @@ export default function ExpensesPage() {
           params.set("cursor", cursor);
         }
         const query = params.toString();
-        const url = `/api/organizations/${orgId}/expenses${query ? `?${query}` : ""}`;
+        const url = `/api/expenses${query ? `?${query}` : ""}`;
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -52,7 +50,7 @@ export default function ExpensesPage() {
         throw new Error(message);
       }
     },
-    [orgId]
+    []
   );
 
   // 初回ロード

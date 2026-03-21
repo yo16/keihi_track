@@ -2,11 +2,10 @@
 
 /**
  * 通知一覧ページ
- * GET /api/organizations/{orgId}/notifications で通知データを取得し、
+ * GET /api/notifications で通知データを取得し、
  * NotificationListコンポーネントで表示する
  */
 import { useState, useEffect } from "react";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { NotificationList } from "@/components/notifications/notification-list";
 
 /** 通知一覧ページの状態 */
@@ -30,7 +29,6 @@ type PageState =
     };
 
 export default function NotificationsPage() {
-  const { orgId } = useAuthContext();
   const [pageState, setPageState] = useState<PageState>({ status: "loading" });
 
   // 初回マウント時に通知一覧を取得する
@@ -38,7 +36,7 @@ export default function NotificationsPage() {
     const fetchNotifications = async () => {
       try {
         const response = await fetch(
-          `/api/organizations/${orgId}/notifications`
+          "/api/notifications"
         );
         if (!response.ok) {
           setPageState({
@@ -62,7 +60,7 @@ export default function NotificationsPage() {
     };
 
     fetchNotifications();
-  }, [orgId]);
+  }, []);
 
   // ローディング状態
   if (pageState.status === "loading") {

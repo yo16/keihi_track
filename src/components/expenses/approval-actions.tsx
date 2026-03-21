@@ -6,7 +6,6 @@
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -27,7 +26,6 @@ interface ApprovalActionsProps {
 /** 承認/却下アクションボタン + 却下理由入力ダイアログ */
 export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
   const router = useRouter();
-  const { orgId } = useAuthContext();
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -45,7 +43,7 @@ export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
 
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/expenses/${expenseId}/approve`,
+        `/api/expenses/${expenseId}/approve`,
         { method: "POST" }
       );
 
@@ -80,7 +78,7 @@ export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
 
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/expenses/${expenseId}/reject`,
+        `/api/expenses/${expenseId}/reject`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

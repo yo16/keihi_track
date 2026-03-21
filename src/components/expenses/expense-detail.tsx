@@ -23,7 +23,7 @@ interface ExpenseDetailProps {
 /** 経費詳細表示コンポーネント */
 export function ExpenseDetail({ expense }: ExpenseDetailProps) {
   const router = useRouter();
-  const { userId, orgId, role } = useAuthContext();
+  const { userId, role } = useAuthContext();
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [showResubmitForm, setShowResubmitForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function ExpenseDetail({ expense }: ExpenseDetailProps) {
 
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/expenses/${expense.id}/withdraw`,
+        `/api/expenses/${expense.id}/withdraw`,
         { method: "POST" }
       );
 
@@ -59,7 +59,7 @@ export function ExpenseDetail({ expense }: ExpenseDetailProps) {
       }
 
       // 成功時: 一覧へ戻る
-      router.push(`/${orgId}/expenses`);
+      router.push("/expenses");
       router.refresh();
     } catch (err) {
       const message =
@@ -207,7 +207,7 @@ export function ExpenseDetail({ expense }: ExpenseDetailProps) {
         {/* 一覧へ戻るボタン */}
         <Button
           variant="outline"
-          onClick={() => router.push(`/${orgId}/expenses`)}
+          onClick={() => router.push("/expenses")}
         >
           一覧へ戻る
         </Button>

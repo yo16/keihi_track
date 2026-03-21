@@ -36,7 +36,7 @@ interface ExpenseWithApplicant {
 
 export default function ApprovalsPage() {
   const router = useRouter();
-  const { orgId, userId } = useAuthContext();
+  const { userId } = useAuthContext();
   const [expenses, setExpenses] = useState<ExpenseWithApplicant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function ApprovalsPage() {
   const fetchPendingExpenses = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/expenses?status=pending`
+        "/api/expenses?status=pending"
       );
 
       if (!response.ok) {
@@ -59,7 +59,7 @@ export default function ApprovalsPage() {
         err instanceof Error ? err.message : "承認待ち一覧の取得に失敗しました";
       throw new Error(message);
     }
-  }, [orgId]);
+  }, []);
 
   // データ取得
   useEffect(() => {

@@ -11,14 +11,14 @@ import "@testing-library/jest-dom";
 // モック: next/navigation
 const mockPush = jest.fn();
 const mockRefresh = jest.fn();
-const mockParams = { orgId: "org-1", expenseId: "exp-1" };
+const mockParams = { expenseId: "exp-1" };
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
     replace: jest.fn(),
     refresh: mockRefresh,
   }),
-  usePathname: () => "/org-1/expenses",
+  usePathname: () => "/expenses",
   useParams: () => mockParams,
 }));
 

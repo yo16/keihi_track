@@ -6,13 +6,11 @@
  */
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { ExpenseDetail } from "@/components/expenses/expense-detail";
 import type { Expense } from "@/types/database";
 
 export default function ExpenseDetailPage() {
   const params = useParams();
-  const { orgId } = useAuthContext();
   const expenseId = params.expenseId as string;
 
   const [expense, setExpense] = useState<Expense | null>(null);
@@ -27,7 +25,7 @@ export default function ExpenseDetailPage() {
 
       try {
         const response = await fetch(
-          `/api/organizations/${orgId}/expenses/${expenseId}`
+          `/api/expenses/${expenseId}`
         );
 
         if (!response.ok) {
@@ -51,7 +49,7 @@ export default function ExpenseDetailPage() {
     };
 
     fetchExpense();
-  }, [orgId, expenseId]);
+  }, [expenseId]);
 
   // ローディング状態
   if (isLoading) {

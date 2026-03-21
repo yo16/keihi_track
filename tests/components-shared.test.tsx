@@ -12,7 +12,7 @@ import "@testing-library/jest-dom";
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-  usePathname: () => "/org-1/expenses",
+  usePathname: () => "/expenses",
 }));
 
 describe("StatusBadge", () => {

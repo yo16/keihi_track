@@ -7,7 +7,6 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CheckCheck } from "lucide-react";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import { useNotificationContext } from "@/lib/contexts/notification-context";
 import { formatDateTime } from "@/lib/utils/format";
 import { Pagination } from "@/components/shared/pagination";
@@ -39,7 +38,6 @@ export function NotificationList({
   initialPagination,
 }: NotificationListProps) {
   const router = useRouter();
-  const { orgId } = useAuthContext();
   const { setUnreadCount, unreadCount } = useNotificationContext();
 
   // 通知一覧の状態管理
@@ -56,7 +54,7 @@ export function NotificationList({
       if (!notification.is_read) {
         try {
           const response = await fetch(
-            `/api/organizations/${orgId}/notifications/${notification.id}/read`,
+            `/api/notifications/${notification.id}/read`,
             { method: "PATCH" }
           );
           if (response.ok) {
@@ -76,10 +74,10 @@ export function NotificationList({
 
       // expense_idがある場合は経費詳細ページへ遷移
       if (notification.expense_id) {
-        router.push(`/${orgId}/expenses/${notification.expense_id}`);
+        router.push(`/expenses/${notification.expense_id}`);
       }
     },
-    [orgId, router, setUnreadCount, unreadCount]
+    [router, setUnreadCount, unreadCount]
   );
 
   // 「全て既読にする」ボタンの処理
@@ -87,7 +85,7 @@ export function NotificationList({
     setIsMarkingAllRead(true);
     try {
       const response = await fetch(
-        `/api/organizations/${orgId}/notifications/read-all`,
+        `/api/notifications/read-all`,
         { method: "PATCH" }
       );
       if (response.ok) {
@@ -103,7 +101,7 @@ export function NotificationList({
     } finally {
       setIsMarkingAllRead(false);
     }
-  }, [orgId, setUnreadCount]);
+  }, [setUnreadCount]);
 
   // 次のページを読み込む
   const handleLoadMore = useCallback(async () => {
@@ -115,7 +113,7 @@ export function NotificationList({
         cursor: pagination.next_cursor,
       });
       const response = await fetch(
-        `/api/organizations/${orgId}/notifications?${params.toString()}`
+        `/api/notifications?${params.toString()}`
       );
       if (response.ok) {
         const json = await response.json();
@@ -128,7 +126,7 @@ export function NotificationList({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [orgId, pagination.next_cursor, isLoadingMore]);
+  }, [pagination.next_cursor, isLoadingMore]);
 
   // 未読通知があるかを判定
   const hasUnread = notifications.some((n) => !n.is_read);

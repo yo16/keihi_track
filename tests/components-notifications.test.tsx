@@ -10,7 +10,7 @@ import "@testing-library/jest-dom";
 
 // モック: next/navigation
 const mockPush = jest.fn();
-const mockPathname = jest.fn(() => "/org-1/notifications");
+const mockPathname = jest.fn(() => "/notifications");
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
   usePathname: () => mockPathname(),
@@ -63,7 +63,7 @@ function TestWrapper({
 beforeEach(() => {
   mockPush.mockClear();
   mockFetch.mockClear();
-  mockPathname.mockReturnValue("/org-1/notifications");
+  mockPathname.mockReturnValue("/notifications");
   jest.useFakeTimers();
 });
 
@@ -147,7 +147,7 @@ describe("NotificationBell", () => {
       screen.getByLabelText("通知").click();
     });
 
-    expect(mockPush).toHaveBeenCalledWith("/org-1/notifications");
+    expect(mockPush).toHaveBeenCalledWith("/notifications");
   });
 });
 
@@ -313,12 +313,12 @@ describe("NotificationList", () => {
 
     // 既読化APIが呼ばれたことを確認
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/organizations/org-1/notifications/n-1/read",
+      "/api/notifications/n-1/read",
       { method: "PATCH" }
     );
 
     // 経費詳細ページへの遷移を確認
-    expect(mockPush).toHaveBeenCalledWith("/org-1/expenses/exp-1");
+    expect(mockPush).toHaveBeenCalledWith("/expenses/exp-1");
   });
 
   it("全て既読にするボタンをクリックすると全通知が既読になること", async () => {
@@ -343,7 +343,7 @@ describe("NotificationList", () => {
 
     // 全既読APIが呼ばれたことを確認
     expect(mockFetch).toHaveBeenCalledWith(
-      "/api/organizations/org-1/notifications/read-all",
+      "/api/notifications/read-all",
       { method: "PATCH" }
     );
 

@@ -14,7 +14,6 @@ import {
   createMemberSchema,
   type CreateMemberInput,
 } from "@/lib/validators/member";
-import { useAuthContext } from "@/lib/contexts/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -49,16 +48,15 @@ export function MemberFormDialog({
   onOpenChange,
   onCreated,
 }: MemberFormDialogProps) {
-  const { orgId } = useAuthContext();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // 招待成功ダイアログの状態
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [invitationSent, setInvitationSent] = useState(false);
 
-  // 組織専用ログインURLの生成
+  // ログインURLの生成（orgIdなし）
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const loginUrl = `${siteUrl}/${orgId}/login`;
+  const loginUrl = siteUrl;
 
   const {
     register,
@@ -81,7 +79,7 @@ export function MemberFormDialog({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/organizations/${orgId}/members`, {
+      const response = await fetch("/api/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
