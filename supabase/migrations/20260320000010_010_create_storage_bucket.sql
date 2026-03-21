@@ -1,8 +1,9 @@
 -- 010: receipts バケット作成 + Storage RLS ポリシー
 
--- バケット作成
+-- バケット作成（既に存在する場合はスキップ）
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('receipts', 'receipts', true);
+VALUES ('receipts', 'receipts', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- アップロード: 認証済みユーザーかつ所属組織のパスのみ
 -- ファイルパスは receipts/{org_id}/{expense_id}/filename の形式
