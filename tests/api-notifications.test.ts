@@ -82,14 +82,14 @@ beforeEach(() => {
 });
 
 // =============================================================================
-// GET /api/organizations/[orgId]/notifications - 通知一覧
+// GET /api/notifications - 通知一覧
 // =============================================================================
-describe("GET /api/organizations/[orgId]/notifications", () => {
-  let GET: typeof import("../src/app/api/organizations/[orgId]/notifications/route").GET;
+describe("GET /api/notifications", () => {
+  let GET: typeof import("../src/app/api/notifications/route").GET;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/notifications/route"
+      "../src/app/api/notifications/route"
     );
     GET = mod.GET;
   });
@@ -103,9 +103,9 @@ describe("GET /api/organizations/[orgId]/notifications", () => {
     };
     mockGetNotifications.mockResolvedValue(fakePaginated);
 
-    const req = createRequest("GET", "/api/organizations/org-1/notifications");
+    const req = createRequest("GET", "/api/notifications");
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -124,10 +124,10 @@ describe("GET /api/organizations/[orgId]/notifications", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/notifications?limit=5&cursor=abc123"
+      "/api/notifications?limit=5&cursor=abc123"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -148,8 +148,8 @@ describe("GET /api/organizations/[orgId]/notifications", () => {
       pagination: { next_cursor: null, has_more: false },
     });
 
-    const req = createRequest("GET", "/api/organizations/org-1/notifications");
-    await GET(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/notifications");
+    await GET(req, { params: Promise.resolve({}) });
 
     expect(mockGetNotifications).toHaveBeenCalledWith(
       mockSupabaseClient,
@@ -163,9 +163,9 @@ describe("GET /api/organizations/[orgId]/notifications", () => {
   it("異常系: 未認証は401を返す", async () => {
     mockUnauthenticated();
 
-    const req = createRequest("GET", "/api/organizations/org-1/notifications");
+    const req = createRequest("GET", "/api/notifications");
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(401);
@@ -173,14 +173,14 @@ describe("GET /api/organizations/[orgId]/notifications", () => {
 });
 
 // =============================================================================
-// GET /api/organizations/[orgId]/notifications/unread-count - 未読件数
+// GET /api/notifications/unread-count - 未読件数
 // =============================================================================
-describe("GET /api/organizations/[orgId]/notifications/unread-count", () => {
-  let GET: typeof import("../src/app/api/organizations/[orgId]/notifications/unread-count/route").GET;
+describe("GET /api/notifications/unread-count", () => {
+  let GET: typeof import("../src/app/api/notifications/unread-count/route").GET;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/notifications/unread-count/route"
+      "../src/app/api/notifications/unread-count/route"
     );
     GET = mod.GET;
   });
@@ -192,10 +192,10 @@ describe("GET /api/organizations/[orgId]/notifications/unread-count", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/notifications/unread-count"
+      "/api/notifications/unread-count"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -210,10 +210,10 @@ describe("GET /api/organizations/[orgId]/notifications/unread-count", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/notifications/unread-count"
+      "/api/notifications/unread-count"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -226,10 +226,10 @@ describe("GET /api/organizations/[orgId]/notifications/unread-count", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/notifications/unread-count"
+      "/api/notifications/unread-count"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(401);
@@ -237,14 +237,14 @@ describe("GET /api/organizations/[orgId]/notifications/unread-count", () => {
 });
 
 // =============================================================================
-// PATCH /api/organizations/[orgId]/notifications/[notificationId]/read - 既読
+// PATCH /api/notifications/[notificationId]/read - 既読
 // =============================================================================
 describe("PATCH .../notifications/[notificationId]/read", () => {
-  let PATCH: typeof import("../src/app/api/organizations/[orgId]/notifications/[notificationId]/read/route").PATCH;
+  let PATCH: typeof import("../src/app/api/notifications/[notificationId]/read/route").PATCH;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/notifications/[notificationId]/read/route"
+      "../src/app/api/notifications/[notificationId]/read/route"
     );
     PATCH = mod.PATCH;
   });
@@ -261,10 +261,10 @@ describe("PATCH .../notifications/[notificationId]/read", () => {
 
     const req = createRequest(
       "PATCH",
-      "/api/organizations/org-1/notifications/notif-1/read"
+      "/api/notifications/notif-1/read"
     );
     const res = await PATCH(req, {
-      params: Promise.resolve({ orgId: "org-1", notificationId: "notif-1" }),
+      params: Promise.resolve({ notificationId: "notif-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -284,10 +284,10 @@ describe("PATCH .../notifications/[notificationId]/read", () => {
 
     const req = createRequest(
       "PATCH",
-      "/api/organizations/org-1/notifications/notif-1/read"
+      "/api/notifications/notif-1/read"
     );
     const res = await PATCH(req, {
-      params: Promise.resolve({ orgId: "org-1", notificationId: "notif-1" }),
+      params: Promise.resolve({ notificationId: "notif-1" }),
     });
 
     expect(res.status).toBe(401);
@@ -295,14 +295,14 @@ describe("PATCH .../notifications/[notificationId]/read", () => {
 });
 
 // =============================================================================
-// PATCH /api/organizations/[orgId]/notifications/read-all - 全既読
+// PATCH /api/notifications/read-all - 全既読
 // =============================================================================
-describe("PATCH /api/organizations/[orgId]/notifications/read-all", () => {
-  let PATCH: typeof import("../src/app/api/organizations/[orgId]/notifications/read-all/route").PATCH;
+describe("PATCH /api/notifications/read-all", () => {
+  let PATCH: typeof import("../src/app/api/notifications/read-all/route").PATCH;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/notifications/read-all/route"
+      "../src/app/api/notifications/read-all/route"
     );
     PATCH = mod.PATCH;
   });
@@ -314,10 +314,10 @@ describe("PATCH /api/organizations/[orgId]/notifications/read-all", () => {
 
     const req = createRequest(
       "PATCH",
-      "/api/organizations/org-1/notifications/read-all"
+      "/api/notifications/read-all"
     );
     const res = await PATCH(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -337,10 +337,10 @@ describe("PATCH /api/organizations/[orgId]/notifications/read-all", () => {
 
     const req = createRequest(
       "PATCH",
-      "/api/organizations/org-1/notifications/read-all"
+      "/api/notifications/read-all"
     );
     const res = await PATCH(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -353,10 +353,10 @@ describe("PATCH /api/organizations/[orgId]/notifications/read-all", () => {
 
     const req = createRequest(
       "PATCH",
-      "/api/organizations/org-1/notifications/read-all"
+      "/api/notifications/read-all"
     );
     const res = await PATCH(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(401);

@@ -96,14 +96,14 @@ beforeEach(() => {
 });
 
 // =============================================================================
-// POST /api/organizations/[orgId]/expenses - 経費作成
+// POST /api/expenses - 経費作成
 // =============================================================================
-describe("POST /api/organizations/[orgId]/expenses", () => {
-  let POST: typeof import("../src/app/api/organizations/[orgId]/expenses/route").POST;
+describe("POST /api/expenses", () => {
+  let POST: typeof import("../src/app/api/expenses/route").POST;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/route"
+      "../src/app/api/expenses/route"
     );
     POST = mod.POST;
   });
@@ -125,10 +125,10 @@ describe("POST /api/organizations/[orgId]/expenses", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses",
+      "/api/expenses",
       validBody
     );
-    const res = await POST(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await POST(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(201);
     const json = await res.json();
@@ -146,10 +146,10 @@ describe("POST /api/organizations/[orgId]/expenses", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses",
+      "/api/expenses",
       validBody
     );
-    const res = await POST(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await POST(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(401);
   });
@@ -158,28 +158,28 @@ describe("POST /api/organizations/[orgId]/expenses", () => {
     mockAuthenticatedUser();
     mockMember("user");
 
-    const req = createRequest("POST", "/api/organizations/org-1/expenses", {
+    const req = createRequest("POST", "/api/expenses", {
       amount: -100, // 正の値でない
       purpose: "",
       usage_date: "invalid",
       receipt_url: "not-a-url",
       receipt_thumbnail_url: "not-a-url",
     });
-    const res = await POST(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await POST(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(400);
   });
 });
 
 // =============================================================================
-// GET /api/organizations/[orgId]/expenses - 経費一覧
+// GET /api/expenses - 経費一覧
 // =============================================================================
-describe("GET /api/organizations/[orgId]/expenses", () => {
-  let GET: typeof import("../src/app/api/organizations/[orgId]/expenses/route").GET;
+describe("GET /api/expenses", () => {
+  let GET: typeof import("../src/app/api/expenses/route").GET;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/route"
+      "../src/app/api/expenses/route"
     );
     GET = mod.GET;
   });
@@ -193,8 +193,8 @@ describe("GET /api/organizations/[orgId]/expenses", () => {
     };
     mockGetExpenses.mockResolvedValue(fakePaginated);
 
-    const req = createRequest("GET", "/api/organizations/org-1/expenses");
-    const res = await GET(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/expenses");
+    const res = await GET(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -218,9 +218,9 @@ describe("GET /api/organizations/[orgId]/expenses", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/expenses?status=pending&status=approved&date_from=2025-01-01&date_to=2025-12-31&limit=10&cursor=abc"
+      "/api/expenses?status=pending&status=approved&date_from=2025-01-01&date_to=2025-12-31&limit=10&cursor=abc"
     );
-    const res = await GET(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await GET(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(200);
     expect(mockGetExpenses).toHaveBeenCalledWith(
@@ -241,22 +241,22 @@ describe("GET /api/organizations/[orgId]/expenses", () => {
   it("異常系: 未認証は401を返す", async () => {
     mockUnauthenticated();
 
-    const req = createRequest("GET", "/api/organizations/org-1/expenses");
-    const res = await GET(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/expenses");
+    const res = await GET(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(401);
   });
 });
 
 // =============================================================================
-// GET /api/organizations/[orgId]/expenses/[expenseId] - 経費詳細
+// GET /api/expenses/[expenseId] - 経費詳細
 // =============================================================================
-describe("GET /api/organizations/[orgId]/expenses/[expenseId]", () => {
-  let GET: typeof import("../src/app/api/organizations/[orgId]/expenses/[expenseId]/route").GET;
+describe("GET /api/expenses/[expenseId]", () => {
+  let GET: typeof import("../src/app/api/expenses/[expenseId]/route").GET;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/[expenseId]/route"
+      "../src/app/api/expenses/[expenseId]/route"
     );
     GET = mod.GET;
   });
@@ -272,10 +272,10 @@ describe("GET /api/organizations/[orgId]/expenses/[expenseId]", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/expenses/exp-1"
+      "/api/expenses/exp-1"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -294,10 +294,10 @@ describe("GET /api/organizations/[orgId]/expenses/[expenseId]", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/expenses/exp-1"
+      "/api/expenses/exp-1"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -314,10 +314,10 @@ describe("GET /api/organizations/[orgId]/expenses/[expenseId]", () => {
 
     const req = createRequest(
       "GET",
-      "/api/organizations/org-1/expenses/exp-1"
+      "/api/expenses/exp-1"
     );
     const res = await GET(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(403);
@@ -328,11 +328,11 @@ describe("GET /api/organizations/[orgId]/expenses/[expenseId]", () => {
 // POST .../expenses/[expenseId]/approve - 経費承認
 // =============================================================================
 describe("POST .../expenses/[expenseId]/approve", () => {
-  let POST: typeof import("../src/app/api/organizations/[orgId]/expenses/[expenseId]/approve/route").POST;
+  let POST: typeof import("../src/app/api/expenses/[expenseId]/approve/route").POST;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/[expenseId]/approve/route"
+      "../src/app/api/expenses/[expenseId]/approve/route"
     );
     POST = mod.POST;
   });
@@ -345,10 +345,10 @@ describe("POST .../expenses/[expenseId]/approve", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/approve"
+      "/api/expenses/exp-1/approve"
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -365,10 +365,10 @@ describe("POST .../expenses/[expenseId]/approve", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/approve"
+      "/api/expenses/exp-1/approve"
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(401);
@@ -379,11 +379,11 @@ describe("POST .../expenses/[expenseId]/approve", () => {
 // POST .../expenses/[expenseId]/reject - 経費却下
 // =============================================================================
 describe("POST .../expenses/[expenseId]/reject", () => {
-  let POST: typeof import("../src/app/api/organizations/[orgId]/expenses/[expenseId]/reject/route").POST;
+  let POST: typeof import("../src/app/api/expenses/[expenseId]/reject/route").POST;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/[expenseId]/reject/route"
+      "../src/app/api/expenses/[expenseId]/reject/route"
     );
     POST = mod.POST;
   });
@@ -396,11 +396,11 @@ describe("POST .../expenses/[expenseId]/reject", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/reject",
+      "/api/expenses/exp-1/reject",
       { comment: "領収書が不鮮明です" }
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -419,11 +419,11 @@ describe("POST .../expenses/[expenseId]/reject", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/reject",
+      "/api/expenses/exp-1/reject",
       { comment: "" }
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(400);
@@ -434,11 +434,11 @@ describe("POST .../expenses/[expenseId]/reject", () => {
 // POST .../expenses/[expenseId]/withdraw - 経費取り下げ
 // =============================================================================
 describe("POST .../expenses/[expenseId]/withdraw", () => {
-  let POST: typeof import("../src/app/api/organizations/[orgId]/expenses/[expenseId]/withdraw/route").POST;
+  let POST: typeof import("../src/app/api/expenses/[expenseId]/withdraw/route").POST;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/[expenseId]/withdraw/route"
+      "../src/app/api/expenses/[expenseId]/withdraw/route"
     );
     POST = mod.POST;
   });
@@ -451,10 +451,10 @@ describe("POST .../expenses/[expenseId]/withdraw", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/withdraw"
+      "/api/expenses/exp-1/withdraw"
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -471,10 +471,10 @@ describe("POST .../expenses/[expenseId]/withdraw", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/withdraw"
+      "/api/expenses/exp-1/withdraw"
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(401);
@@ -485,11 +485,11 @@ describe("POST .../expenses/[expenseId]/withdraw", () => {
 // POST .../expenses/[expenseId]/resubmit - 経費再申請
 // =============================================================================
 describe("POST .../expenses/[expenseId]/resubmit", () => {
-  let POST: typeof import("../src/app/api/organizations/[orgId]/expenses/[expenseId]/resubmit/route").POST;
+  let POST: typeof import("../src/app/api/expenses/[expenseId]/resubmit/route").POST;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/[expenseId]/resubmit/route"
+      "../src/app/api/expenses/[expenseId]/resubmit/route"
     );
     POST = mod.POST;
   });
@@ -510,11 +510,11 @@ describe("POST .../expenses/[expenseId]/resubmit", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/resubmit",
+      "/api/expenses/exp-1/resubmit",
       validBody
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(200);
@@ -533,11 +533,11 @@ describe("POST .../expenses/[expenseId]/resubmit", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/exp-1/resubmit",
+      "/api/expenses/exp-1/resubmit",
       { amount: -1, purpose: "", usage_date: "bad", receipt_url: "x", receipt_thumbnail_url: "y" }
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1", expenseId: "exp-1" }),
+      params: Promise.resolve({ expenseId: "exp-1" }),
     });
 
     expect(res.status).toBe(400);
@@ -545,14 +545,14 @@ describe("POST .../expenses/[expenseId]/resubmit", () => {
 });
 
 // =============================================================================
-// POST /api/organizations/[orgId]/expenses/csv - CSV出力
+// POST /api/expenses/csv - CSV出力
 // =============================================================================
-describe("POST /api/organizations/[orgId]/expenses/csv", () => {
-  let POST: typeof import("../src/app/api/organizations/[orgId]/expenses/csv/route").POST;
+describe("POST /api/expenses/csv", () => {
+  let POST: typeof import("../src/app/api/expenses/csv/route").POST;
 
   beforeAll(async () => {
     const mod = await import(
-      "../src/app/api/organizations/[orgId]/expenses/csv/route"
+      "../src/app/api/expenses/csv/route"
     );
     POST = mod.POST;
   });
@@ -565,11 +565,11 @@ describe("POST /api/organizations/[orgId]/expenses/csv", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/csv",
+      "/api/expenses/csv",
       { ids: ["exp-1", "exp-2"] }
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(200);
@@ -588,11 +588,11 @@ describe("POST /api/organizations/[orgId]/expenses/csv", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/csv",
+      "/api/expenses/csv",
       { ids: [] }
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(400);
@@ -604,11 +604,11 @@ describe("POST /api/organizations/[orgId]/expenses/csv", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/csv",
+      "/api/expenses/csv",
       {}
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(400);
@@ -619,11 +619,11 @@ describe("POST /api/organizations/[orgId]/expenses/csv", () => {
 
     const req = createRequest(
       "POST",
-      "/api/organizations/org-1/expenses/csv",
+      "/api/expenses/csv",
       { ids: ["exp-1"] }
     );
     const res = await POST(req, {
-      params: Promise.resolve({ orgId: "org-1" }),
+      params: Promise.resolve({}),
     });
 
     expect(res.status).toBe(401);

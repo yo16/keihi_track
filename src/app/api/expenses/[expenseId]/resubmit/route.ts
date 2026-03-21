@@ -1,5 +1,5 @@
 /**
- * POST /api/organizations/[orgId]/expenses/[expenseId]/resubmit - 経費を再申請する
+ * POST /api/expenses/[expenseId]/resubmit - 経費を再申請する
  * 認証 + メンバーチェック（申請者本人のみ）
  */
 import { NextRequest, NextResponse } from "next/server";

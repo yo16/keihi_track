@@ -25,12 +25,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (data.user) {
-      const orgId = data.user.user_metadata?.org_id;
-
-      if (orgId) {
-        // 招待ユーザー: パスワード設定ページへ
-        return NextResponse.redirect(`${origin}/${orgId}/set-password`);
-      }
+      // 招待ユーザー: パスワード設定ページへ
+      return NextResponse.redirect(`${origin}/set-password`);
     }
   }
 

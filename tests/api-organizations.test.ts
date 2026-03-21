@@ -28,10 +28,8 @@ jest.mock("../src/lib/auth/guard", () => ({
 }));
 
 // DB操作関数のモック
-const mockCreateOrganization = jest.fn();
 const mockGetOrganization = jest.fn();
 jest.mock("../src/lib/db/organizations", () => ({
-  createOrganization: (...args: unknown[]) => mockCreateOrganization(...args),
   getOrganization: (...args: unknown[]) => mockGetOrganization(...args),
 }));
 
@@ -100,72 +98,13 @@ beforeEach(() => {
 });
 
 // ============================
-// POST /api/organizations
+// GET /api/organization
 // ============================
-describe("POST /api/organizations", () => {
+describe("GET /api/organization", () => {
   let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/route");
-    handler = mod.POST;
-  });
-
-  const callHandler = (req: NextRequest) =>
-    handler(req, { params: Promise.resolve({}) });
-
-  it("認証済みユーザーが組織を作成できること（201）", async () => {
-    mockAuthenticatedUser("user-1");
-    const orgData = { id: "org-1", name: "テスト組織", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" };
-    mockCreateOrganization.mockResolvedValue(orgData);
-
-    const req = createRequest("POST", "/api/organizations", {
-      name: "テスト組織",
-      display_name: "管理者",
-    });
-    const res = await callHandler(req);
-
-    expect(res.status).toBe(201);
-    const json = await res.json();
-    expect(json.data.id).toBe("org-1");
-    expect(mockCreateOrganization).toHaveBeenCalledWith("テスト組織", "管理者", "user-1");
-  });
-
-  it("未認証の場合401を返すこと", async () => {
-    mockUnauthenticated();
-
-    const req = createRequest("POST", "/api/organizations", {
-      name: "テスト組織",
-      display_name: "管理者",
-    });
-    const res = await callHandler(req);
-
-    expect(res.status).toBe(401);
-  });
-
-  it("バリデーションエラー時に400を返すこと", async () => {
-    mockAuthenticatedUser();
-
-    // nameが空
-    const req = createRequest("POST", "/api/organizations", {
-      name: "",
-      display_name: "管理者",
-    });
-    const res = await callHandler(req);
-
-    expect(res.status).toBe(400);
-    const json = await res.json();
-    expect(json.error.code).toBe("VALIDATION_ERROR");
-  });
-});
-
-// ============================
-// GET /api/organizations/[orgId]
-// ============================
-describe("GET /api/organizations/[orgId]", () => {
-  let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
-
-  beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/route");
+    const mod = await import("../src/app/api/organization/route");
     handler = mod.GET;
   });
 
@@ -175,8 +114,8 @@ describe("GET /api/organizations/[orgId]", () => {
     const orgData = { id: "org-1", name: "テスト組織", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" };
     mockGetOrganization.mockResolvedValue(orgData);
 
-    const req = createRequest("GET", "/api/organizations/org-1");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/organization");
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -186,27 +125,27 @@ describe("GET /api/organizations/[orgId]", () => {
   it("未認証の場合401を返すこと", async () => {
     mockUnauthenticated();
 
-    const req = createRequest("GET", "/api/organizations/org-1");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/organization");
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(401);
   });
 });
 
 // ============================
-// GET /api/organizations/[orgId]/me
+// GET /api/me
 // ============================
-describe("GET /api/organizations/[orgId]/me", () => {
+describe("GET /api/me", () => {
   let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/me/route");
+    const mod = await import("../src/app/api/me/route");
     handler = mod.GET;
   });
 
   it("自分のメンバー情報を取得できること（200）", async () => {
     mockAuthenticatedUser("user-1");
-    mockGetMember.mockResolvedValue({
+    mockGetMemberOrFail.mockResolvedValue({
       org_id: "org-1",
       user_id: "user-1",
       role: "admin",
@@ -216,8 +155,8 @@ describe("GET /api/organizations/[orgId]/me", () => {
       updated_at: "2026-01-01T00:00:00Z",
     });
 
-    const req = createRequest("GET", "/api/organizations/org-1/me");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/me");
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -228,23 +167,25 @@ describe("GET /api/organizations/[orgId]/me", () => {
 
   it("メンバーでない場合404を返すこと", async () => {
     mockAuthenticatedUser("user-1");
-    mockGetMember.mockResolvedValue(null);
+    mockGetMemberOrFail.mockRejectedValue(
+      new (await import("../src/lib/api/error")).ApiError(404, "NOT_FOUND", "メンバーが見つかりません")
+    );
 
-    const req = createRequest("GET", "/api/organizations/org-1/me");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/me");
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(404);
   });
 });
 
 // ============================
-// GET /api/organizations/[orgId]/members
+// GET /api/members
 // ============================
-describe("GET /api/organizations/[orgId]/members", () => {
+describe("GET /api/members", () => {
   let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/members/route");
+    const mod = await import("../src/app/api/members/route");
     handler = mod.GET;
   });
 
@@ -256,8 +197,8 @@ describe("GET /api/organizations/[orgId]/members", () => {
     ];
     mockGetMembers.mockResolvedValue(members);
 
-    const req = createRequest("GET", "/api/organizations/org-1/members");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/members");
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -269,8 +210,8 @@ describe("GET /api/organizations/[orgId]/members", () => {
     mockAdminMember("org-1", "user-1");
     mockGetMembers.mockResolvedValue([]);
 
-    const req = createRequest("GET", "/api/organizations/org-1/members?include_deleted=true");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const req = createRequest("GET", "/api/members?include_deleted=true");
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(200);
     // getMembersが第3引数trueで呼ばれること
@@ -283,13 +224,13 @@ describe("GET /api/organizations/[orgId]/members", () => {
 });
 
 // ============================
-// POST /api/organizations/[orgId]/members
+// POST /api/members
 // ============================
-describe("POST /api/organizations/[orgId]/members", () => {
+describe("POST /api/members", () => {
   let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/members/route");
+    const mod = await import("../src/app/api/members/route");
     handler = mod.POST;
   });
 
@@ -304,13 +245,13 @@ describe("POST /api/organizations/[orgId]/members", () => {
       invitation_text: "招待テキスト",
     });
 
-    const req = createRequest("POST", "/api/organizations/org-1/members", {
+    const req = createRequest("POST", "/api/members", {
       email: "new@test.com",
       password: "password123",
       display_name: "新メンバー",
       role: "user",
     });
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(201);
     const json = await res.json();
@@ -321,13 +262,13 @@ describe("POST /api/organizations/[orgId]/members", () => {
     mockAuthenticatedUser("user-1");
     mockAdminMember("org-1", "user-1");
 
-    const req = createRequest("POST", "/api/organizations/org-1/members", {
+    const req = createRequest("POST", "/api/members", {
       email: "new@test.com",
       password: "short",
       display_name: "新メンバー",
       role: "user",
     });
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(400);
   });
@@ -336,26 +277,26 @@ describe("POST /api/organizations/[orgId]/members", () => {
     mockAuthenticatedUser("user-1");
     mockAdminMember("org-1", "user-1");
 
-    const req = createRequest("POST", "/api/organizations/org-1/members", {
+    const req = createRequest("POST", "/api/members", {
       email: "new@test.com",
       password: "password123",
       display_name: "新メンバー",
       role: "admin",
     });
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1" }) });
+    const res = await handler(req, { params: Promise.resolve({}) });
 
     expect(res.status).toBe(400);
   });
 });
 
 // ============================
-// PATCH /api/organizations/[orgId]/members/[userId]
+// PATCH /api/members/[userId]
 // ============================
-describe("PATCH /api/organizations/[orgId]/members/[userId]", () => {
+describe("PATCH /api/members/[userId]", () => {
   let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/members/[userId]/route");
+    const mod = await import("../src/app/api/members/[userId]/route");
     handler = mod.PATCH;
   });
 
@@ -374,10 +315,10 @@ describe("PATCH /api/organizations/[orgId]/members/[userId]", () => {
       updated_at: "2026-01-01T00:00:00Z",
     });
 
-    const req = createRequest("PATCH", "/api/organizations/org-1/members/user-2", {
+    const req = createRequest("PATCH", "/api/members/user-2", {
       role: "approver",
     });
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1", userId: "user-2" }) });
+    const res = await handler(req, { params: Promise.resolve({ userId: "user-2" }) });
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -393,10 +334,10 @@ describe("PATCH /api/organizations/[orgId]/members/[userId]", () => {
       throw new ApiError(403, "FORBIDDEN", "自分自身に対しては実行できません");
     });
 
-    const req = createRequest("PATCH", "/api/organizations/org-1/members/user-1", {
+    const req = createRequest("PATCH", "/api/members/user-1", {
       role: "user",
     });
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1", userId: "user-1" }) });
+    const res = await handler(req, { params: Promise.resolve({ userId: "user-1" }) });
 
     expect(res.status).toBe(403);
   });
@@ -406,23 +347,23 @@ describe("PATCH /api/organizations/[orgId]/members/[userId]", () => {
     mockAdminMember("org-1", "user-1");
     mockRequireNotSelf.mockImplementation(() => undefined);
 
-    const req = createRequest("PATCH", "/api/organizations/org-1/members/user-2", {
+    const req = createRequest("PATCH", "/api/members/user-2", {
       role: "invalid_role",
     });
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1", userId: "user-2" }) });
+    const res = await handler(req, { params: Promise.resolve({ userId: "user-2" }) });
 
     expect(res.status).toBe(400);
   });
 });
 
 // ============================
-// DELETE /api/organizations/[orgId]/members/[userId]
+// DELETE /api/members/[userId]
 // ============================
-describe("DELETE /api/organizations/[orgId]/members/[userId]", () => {
+describe("DELETE /api/members/[userId]", () => {
   let handler: (req: NextRequest, ctx: { params: Promise<Record<string, string>> }) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import("../src/app/api/organizations/[orgId]/members/[userId]/route");
+    const mod = await import("../src/app/api/members/[userId]/route");
     handler = mod.DELETE;
   });
 
@@ -440,8 +381,8 @@ describe("DELETE /api/organizations/[orgId]/members/[userId]", () => {
       updated_at: "2026-03-20T00:00:00Z",
     });
 
-    const req = createRequest("DELETE", "/api/organizations/org-1/members/user-2");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1", userId: "user-2" }) });
+    const req = createRequest("DELETE", "/api/members/user-2");
+    const res = await handler(req, { params: Promise.resolve({ userId: "user-2" }) });
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -452,8 +393,8 @@ describe("DELETE /api/organizations/[orgId]/members/[userId]", () => {
   it("未認証の場合401を返すこと", async () => {
     mockUnauthenticated();
 
-    const req = createRequest("DELETE", "/api/organizations/org-1/members/user-2");
-    const res = await handler(req, { params: Promise.resolve({ orgId: "org-1", userId: "user-2" }) });
+    const req = createRequest("DELETE", "/api/members/user-2");
+    const res = await handler(req, { params: Promise.resolve({ userId: "user-2" }) });
 
     expect(res.status).toBe(401);
   });

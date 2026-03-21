@@ -1,5 +1,5 @@
 /**
- * GET /api/organizations/[orgId]/expenses/[expenseId] - 経費詳細を取得する
+ * GET /api/expenses/[expenseId] - 経費詳細を取得する
  * 認証 + メンバーチェック + ロール別アクセス制御
  */
 import { NextRequest, NextResponse } from "next/server";

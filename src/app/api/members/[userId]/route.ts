@@ -1,6 +1,6 @@
 /**
- * PATCH /api/organizations/[orgId]/members/[userId] - ロールを変更する
- * DELETE /api/organizations/[orgId]/members/[userId] - メンバーを論理削除する
+ * PATCH /api/members/[userId] - ロールを変更する
+ * DELETE /api/members/[userId] - メンバーを論理削除する
  * 認証 + adminチェック
  */
 import { NextRequest, NextResponse } from "next/server";

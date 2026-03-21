@@ -1,5 +1,5 @@
 /**
- * POST /api/organizations/[orgId]/expenses/[expenseId]/approve - 経費を承認する
+ * POST /api/expenses/[expenseId]/approve - 経費を承認する
  * 認証 + approver以上チェック
  */
 import { NextRequest, NextResponse } from "next/server";
