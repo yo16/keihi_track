@@ -1,13 +1,13 @@
 /**
- * ミドルウェア用Supabaseセッションリフレッシュ
- * Edge Runtimeで動作し、リクエストごとにセッショントークンを更新する
+ * Supabaseセッションリフレッシュ（proxy.tsから呼び出される）
+ * リクエストごとにセッショントークンを更新する
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * リクエストのセッションを更新する
- * ミドルウェアから呼び出され、Supabase Authのセッションをリフレッシュする
+ * proxy.tsから呼び出され、Supabase Authのセッションをリフレッシュする
  */
 export async function updateSession(request: NextRequest) {
   // デフォルトのレスポンスを生成
@@ -57,7 +57,23 @@ export async function updateSession(request: NextRequest) {
 
   // セッションのリフレッシュを実行する
   // getUser()を呼ぶことでトークンが自動的にリフレッシュされる
-  await supabase.auth.getUser();
+  const { error } = await supabase.auth.getUser();
+
+  if (error) {
+    // 無効なリフレッシュトークン等のエラー
+    // （DBリセット後、セッション期限切れ、トークン無効化等で発生する）
+    // エラーをthrowせず、Supabase関連Cookieをクリアして未認証状態で続行する
+    const allCookies = request.cookies.getAll();
+    const supabaseCookies = allCookies.filter((c) => c.name.startsWith("sb-"));
+
+    if (supabaseCookies.length > 0) {
+      supabaseCookies.forEach(({ name }) => request.cookies.delete(name));
+      supabaseResponse = NextResponse.next({ request });
+      supabaseCookies.forEach(({ name }) =>
+        supabaseResponse.cookies.set(name, "", { maxAge: 0 })
+      );
+    }
+  }
 
   return supabaseResponse;
 }
