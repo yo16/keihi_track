@@ -1339,6 +1339,14 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('receipts', 'receipts', true)
 ON CONFLICT (id) DO NOTHING;
 
+-- 参照: 認証済みユーザーのみ（upsert時のファイル存在確認に必要）
+CREATE POLICY "receipts_select"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'receipts'
+    AND auth.uid() IS NOT NULL
+  );
+
 -- アップロード: 認証済みユーザーのみ
 CREATE POLICY "receipts_upload"
   ON storage.objects FOR INSERT
@@ -1356,7 +1364,10 @@ CREATE POLICY "receipts_update"
   );
 ```
 
-**補足**: publicバケットのため、アップロードは認証済みユーザーであれば許可する。ファイルパスによる組織チェック（`storage.foldername`）は `@supabase/ssr` 環境での型変換エラー（22P02）を引き起こすため採用しない。
+**補足**:
+- publicバケットのため、認証済みユーザーであれば操作を許可する
+- `upsert: true` でアップロードする場合、SELECT（ファイル存在確認）+ INSERT or UPDATE が内部的に実行されるため、3種類のポリシー（SELECT/INSERT/UPDATE）が全て必要
+- ファイルパスによる組織チェック（`storage.foldername`）は型変換エラー（22P02）を引き起こすため採用しない
 
 ### 8.4 サムネイル生成
 
