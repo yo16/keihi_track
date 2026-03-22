@@ -1332,31 +1332,29 @@ receipts/
 ### 8.3 Storage RLSポリシー
 
 ```sql
--- バケット作成
+-- バケット作成（既に存在する場合はスキップ）
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('receipts', 'receipts', true);
+VALUES ('receipts', 'receipts', true)
+ON CONFLICT (id) DO NOTHING;
 
--- アップロード: 認証済みユーザーかつ所属組織のパスのみ
--- ファイルパスは receipts/{org_id}/{expense_id}/filename の形式
+-- アップロード: 認証済みユーザーのみ
 CREATE POLICY "receipts_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'receipts'
     AND auth.uid() IS NOT NULL
-    AND public.is_member_of((storage.foldername(name))[1]::UUID)
   );
 
--- 更新（差し替え）: 認証済みユーザーかつ所属組織のパスのみ
+-- 更新（差し替え）: 認証済みユーザーのみ
 CREATE POLICY "receipts_update"
   ON storage.objects FOR UPDATE
   USING (
     bucket_id = 'receipts'
     AND auth.uid() IS NOT NULL
-    AND public.is_member_of((storage.foldername(name))[1]::UUID)
   );
 ```
 
-**補足**: `storage.foldername(name)` はファイルパスからフォルダ名の配列を返す関数。`[1]` で第1階層（organization_id）を取得し、所属組織のパスのみ操作を許可する。
+**補足**: publicバケットのため、アップロードは認証済みユーザーであれば許可する。ファイルパスによる組織チェック（`storage.foldername`）は `@supabase/ssr` 環境での型変換エラー（22P02）を引き起こすため採用しない。
 
 ### 8.4 サムネイル生成
 
