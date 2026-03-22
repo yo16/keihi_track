@@ -1,5 +1,5 @@
 -- 003: expenses テーブル作成
--- 経費申請テーブル + インデックス + CHECK制約（自己承認防止）
+-- 経費申請テーブル + インデックス
 
 CREATE TABLE expenses (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -21,9 +21,7 @@ CREATE TABLE expenses (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   FOREIGN KEY (org_id, applicant_user_id)
-    REFERENCES organization_members(org_id, user_id),
-  -- 自分自身の申請は承認できない（DB層での保護）
-  CHECK (approved_by IS NULL OR approved_by != applicant_user_id)
+    REFERENCES organization_members(org_id, user_id)
 );
 
 -- 使用者：自分の申請一覧（ステータス別）

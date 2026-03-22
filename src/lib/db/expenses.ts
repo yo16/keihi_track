@@ -469,9 +469,29 @@ export async function approveExpense(
     );
   }
 
-  // 自分自身の申請は承認できない
+  // 自己承認チェック: 組織内のアクティブな承認権限者（admin + approver）の数に応じて判定
   if (expense.applicant_user_id === approverId) {
-    throw new ApiError(403, "FORBIDDEN", "自分の申請は承認できません");
+    const adminClient = createAdminClient();
+    const { count, error: countError } = await adminClient
+      .from("organization_members")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .in("role", ["admin", "approver"])
+      .is("deleted_at", null);
+
+    if (countError) {
+      throw new ApiError(
+        500,
+        "DB_ERROR",
+        `承認権限者の数を取得できませんでした: ${countError.message}`
+      );
+    }
+
+    // 承認権限者が2人以上いる場合は自己承認を拒否
+    if ((count ?? 0) >= 2) {
+      throw new ApiError(403, "FORBIDDEN", "自分の申請は承認できません");
+    }
+    // 1人のみの場合は自己承認を許可（チェックをスキップ）
   }
 
   // 経費を承認ステータスに更新
@@ -554,9 +574,29 @@ export async function rejectExpense(
     );
   }
 
-  // 自分自身の申請は却下できない
+  // 自己却下チェック: 組織内のアクティブな承認権限者（admin + approver）の数に応じて判定
   if (expense.applicant_user_id === rejecterId) {
-    throw new ApiError(403, "FORBIDDEN", "自分の申請は却下できません");
+    const adminClient = createAdminClient();
+    const { count, error: countError } = await adminClient
+      .from("organization_members")
+      .select("*", { count: "exact", head: true })
+      .eq("org_id", orgId)
+      .in("role", ["admin", "approver"])
+      .is("deleted_at", null);
+
+    if (countError) {
+      throw new ApiError(
+        500,
+        "DB_ERROR",
+        `承認権限者の数を取得できませんでした: ${countError.message}`
+      );
+    }
+
+    // 承認権限者が2人以上いる場合は自己却下を拒否
+    if ((count ?? 0) >= 2) {
+      throw new ApiError(403, "FORBIDDEN", "自分の申請は却下できません");
+    }
+    // 1人のみの場合は自己却下を許可（チェックをスキップ）
   }
 
   // 経費を却下ステータスに更新

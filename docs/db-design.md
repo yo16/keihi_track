@@ -128,9 +128,7 @@ CREATE TABLE expenses (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   FOREIGN KEY (org_id, applicant_user_id)
-    REFERENCES organization_members(org_id, user_id),
-  -- 自分自身の申請は承認できない（DB層での保護）
-  CHECK (approved_by IS NULL OR approved_by != applicant_user_id)
+    REFERENCES organization_members(org_id, user_id)
 );
 
 -- 使用者：自分の申請一覧（ステータス別）
@@ -173,7 +171,7 @@ CREATE INDEX idx_expenses_org_usage_date
 - 却下後に再申請された場合、`rejected_by` / `rejected_at` / `rejection_comment` はクリアされる
 
 ステータス遷移に対するCHECK制約（アプリケーション層で実装）:
-- `pending` → `approved` : `approved_by` と `approved_at` が必須、`applicant_user_id != approved_by`
+- `pending` → `approved` : `approved_by` と `approved_at` が必須、`applicant_user_id != approved_by`（ただし承認権限者が1人のみの場合は自己承認を許可）
 - `pending` → `rejected` : `rejected_by`、`rejected_at`、`rejection_comment` が必須
 - `pending` → `deleted` : 申請者本人のみ
 - `rejected` → `pending` : 申請者本人のみ、承認関連カラムをクリア
@@ -1195,7 +1193,7 @@ CREATE INDEX idx_org_members_rls_lookup
 |---|-----------------|------|------|
 | 1 | `001_create_organizations` | organizations テーブル作成 | なし |
 | 2 | `002_create_organization_members` | organization_members テーブル作成 + インデックス + user_id UNIQUE制約 | organizations, auth.users |
-| 3 | `003_create_expenses` | expenses テーブル作成 + インデックス + CHECK制約 | organization_members |
+| 3 | `003_create_expenses` | expenses テーブル作成 + インデックス | organization_members |
 | 4 | `004_create_expense_status_logs` | expense_status_logs テーブル作成 + インデックス | expenses |
 | 5 | `005_create_notifications` | notifications テーブル作成 + インデックス | organizations, expenses |
 | 6 | `006_create_updated_at_trigger` | updated_at 自動更新トリガー関数 + 各テーブルへのトリガー設定 | 全テーブル作成後 |
