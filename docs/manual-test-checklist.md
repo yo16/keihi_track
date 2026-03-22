@@ -1,5 +1,23 @@
 # 手動テストチェックリスト
 
+## 0. 環境セットアップ（テスト前に確認）
+
+### Supabaseダッシュボード設定
+- [ ] Authentication > URL Configuration > Site URL: アプリのベースURL（開発時: `http://localhost:3000`）
+- [ ] Authentication > URL Configuration > Redirect URLs: `http://localhost:3000/auth/callback` を追加
+- [ ] Authentication > Email Templates > Invite User: リンクを以下に変更:
+  ```
+  {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite&redirect_to=/set-password
+  ```
+
+### 環境変数
+- [ ] `.env.local` に NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY を設定
+- [ ] `.env.local` に NEXT_PUBLIC_APP_URL=http://localhost:3000 を設定
+- [ ] `.env.local` に RESEND_API_KEY を設定（メール通知テスト時）
+
+### Supabase Auth カスタムSMTP（Resend）
+- [ ] Settings > Authentication > SMTP Settings でResendのSMTPを設定済み
+
 ## 1. 組織作成フロー
 - [ ] / にアクセス → ログインフォーム表示
 - [ ] 「新規組織を作成」→ ダイアログ表示
@@ -14,8 +32,8 @@
 
 ## 3. 招待ユーザーのアカウント有効化
 - [ ] 招待メールのリンクをクリック
-- [ ] / にハッシュフラグメント付きでリダイレクト
-- [ ] 「認証情報を確認中...」表示後、/set-password にリダイレクト
+- [ ] /auth/callback?token_hash=xxx&type=invite にアクセスされる
+- [ ] /set-password にリダイレクト
 - [ ] パスワード入力+確認 → 設定完了
 - [ ] / にリダイレクト、「パスワードが設定されました」メッセージ表示
 

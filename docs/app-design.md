@@ -197,25 +197,29 @@ src/
 
 ### 4.1.1 招待ユーザーのアカウント有効化フロー
 
-**重要**: Supabase Authの招待メール（invite type）は**Implicitフロー**を使用する。PKCEフロー（code交換）ではない。トークンはハッシュフラグメント（`#`）でクライアントに渡され、サーバーサイド（Route Handler）では読み取れない。
+Supabaseのデフォルトの招待メールはImplicitフロー（ハッシュフラグメント）を使用するが、`@supabase/ssr` はこれをサポートしない。そのため、**Supabaseダッシュボードで招待メールテンプレートを変更し、PKCEフロー（token_hash + verifyOtp）を使用する**。
+
+**Supabaseダッシュボード設定（必須）**:
+- Authentication > Email Templates > Invite User
+- メール本文内のリンクを以下に変更:
+  ```
+  {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite&redirect_to=/set-password
+  ```
 
 ```
 管理者がメンバー招待
   │
   ↓ Supabase Auth が招待メールを自動送信（inviteUserByEmail）
+  │   メール内リンク: {SiteURL}/auth/callback?token_hash=xxx&type=invite&redirect_to=/set-password
   │
 招待されたユーザーがメール内リンクをクリック
   │
-  ↓ Supabase /auth/v1/verify がトークン検証
+  ↓ /auth/callback にアクセス（token_hashがクエリパラメータで渡される）
   │
-  ↓ Site URL（/）にハッシュフラグメント付きでリダイレクト
-  │   URL例: /#access_token=xxx&type=invite&refresh_token=yyy
+  ↓ route.ts で supabase.auth.verifyOtp({ token_hash, type: "invite" }) 実行
+  │   → セッション確立（Cookie設定）
   │
-  ↓ トップページ（page.tsx）がハッシュフラグメントを検知
-  │   - type=invite を検出
-  │   - @supabase/ssr がハッシュからセッションを自動復元
-  │
-  ↓ /set-password へリダイレクト
+  ↓ redirect_to（/set-password）へリダイレクト
   │
 パスワード設定完了（supabase.auth.updateUser({ password })）
   │
@@ -223,9 +227,8 @@ src/
 ```
 
 **注意点**:
-- `/auth/callback/route.ts` はPKCEフロー用に残しているが、招待フローでは使用されない
-- ハッシュフラグメントはサーバーに送信されないため、トップページのクライアントサイド（useEffect）で処理する必要がある
-- `redirect_to` パラメータで `/auth/callback` を指定しても、invite typeではSupabaseがSite URLにフォールバックする
+- メールテンプレートの変更はSupabaseダッシュボードでの手動設定が必要（環境ごとに設定）
+- `/auth/callback/route.ts` はPKCEフロー（code）と招待フロー（token_hash）の両方に対応
 
 ### 4.2 セッション管理
 
@@ -238,13 +241,6 @@ src/
 - `proxy.ts` は Edge Runtime ではなくNode.jsランタイムで動作する（Next.js 16のproxy方式）
 - `@supabase/ssr` によるセッションリフレッシュを実行
 - catch 節では必ず `console.error` でエラーを出力すること（サイレントな握りつぶしは原因不明の認証エラーを引き起こす）
-- 詳細は `.claude/knowledge/nextjs-edge-runtime.md` を参照
-
-**Implicitフローに関する注意**:
-- Supabase Authの招待メール（invite type）はImplicitフローを使用し、トークンをハッシュフラグメントで渡す
-- ハッシュフラグメントはサーバーサイドでは取得できないため、クライアントサイドで処理する必要がある
-- トップページ（page.tsx）でハッシュフラグメントを検知し、type=inviteの場合は/set-passwordへリダイレクトするロジックが必要
-- 詳細は `.claude/knowledge/nextjs-edge-runtime.md` を参照
 
 ### 4.3 ルート保護
 
