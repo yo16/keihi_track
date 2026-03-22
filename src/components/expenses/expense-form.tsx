@@ -88,8 +88,8 @@ export function ExpenseForm({ mode, initialData }: ExpenseFormProps) {
     // ファイル拡張子の取得
     const ext = originalFile.name.split(".").pop() || "jpg";
 
-    // オリジナル画像のアップロード
-    const originalPath = `receipts/${orgId}/${expenseId}/original.${ext}`;
+    // オリジナル画像のアップロード（.from("receipts")でバケット指定済みのため、バケット内パスのみ）
+    const originalPath = `${orgId}/${expenseId}/original.${ext}`;
     const { error: originalError } = await supabase.storage
       .from("receipts")
       .upload(originalPath, originalFile, { upsert: true });
@@ -99,7 +99,7 @@ export function ExpenseForm({ mode, initialData }: ExpenseFormProps) {
     }
 
     // サムネイル画像のアップロード
-    const thumbnailPath = `receipts/${orgId}/${expenseId}/thumbnail.jpg`;
+    const thumbnailPath = `${orgId}/${expenseId}/thumbnail.jpg`;
     const { error: thumbnailError } = await supabase.storage
       .from("receipts")
       .upload(thumbnailPath, thumbnailBlob, { upsert: true });
