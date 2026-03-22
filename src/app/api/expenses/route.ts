@@ -69,7 +69,9 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
   // 3. クエリパラメータからフィルター条件を取得
   const { searchParams } = new URL(request.url);
-  const status = searchParams.getAll("status");
+  // ステータスはカンマ区切り（"pending,approved"）または複数パラメータ（"status=pending&status=approved"）の両方に対応
+  const statusRaw = searchParams.getAll("status");
+  const status = statusRaw.flatMap((s) => s.split(",")).filter(Boolean);
   const dateFrom = searchParams.get("date_from") ?? undefined;
   const dateTo = searchParams.get("date_to") ?? undefined;
   const limitParam = searchParams.get("limit");

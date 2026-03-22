@@ -229,7 +229,7 @@ export async function getExpenses(
   let query = supabase
     .from("expenses")
     .select(
-      "id, amount, purpose, usage_date, receipt_thumbnail_url, comment, status, applicant_user_id, created_at, organization_members!expenses_org_id_applicant_user_id_fkey(display_name)"
+      "id, amount, purpose, usage_date, receipt_thumbnail_url, comment, status, applicant_user_id, created_at, organization_members(display_name)"
     )
     .eq("org_id", orgId)
     .in("status", statusFilter)
