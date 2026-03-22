@@ -156,7 +156,7 @@ describe("InviteSuccessDialog", () => {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     invitationSent: boolean;
-    loginUrl: string;
+    email: string;
   }>;
 
   beforeAll(async () => {
@@ -164,17 +164,19 @@ describe("InviteSuccessDialog", () => {
     InviteSuccessDialog = mod.InviteSuccessDialog;
   });
 
-  it("招待メール送信時に送信メッセージが表示されること", () => {
+  it("招待メール送信時にメールアドレス付きの送信メッセージが表示されること", () => {
     render(
       <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
         invitationSent={true}
-        loginUrl="https://example.com/test-org/login"
+        email="invited@example.com"
       />
     );
 
-    expect(screen.getByText(/招待メールを送信しました/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/招待メールを invited@example.com に送信しました/)
+    ).toBeInTheDocument();
   });
 
   it("既存ユーザー追加時に追加メッセージが表示されること", () => {
@@ -183,73 +185,68 @@ describe("InviteSuccessDialog", () => {
         open={true}
         onOpenChange={jest.fn()}
         invitationSent={false}
-        loginUrl="https://example.com/test-org/login"
+        email="existing@example.com"
       />
     );
 
     expect(screen.getByText(/メンバーを組織に追加しました/)).toBeInTheDocument();
   });
 
-  it("ログインURLが表示されること", () => {
-    const loginUrl = "https://example.com/test-org/login";
+  it("emailアドレスが表示されること", () => {
     render(
       <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
         invitationSent={true}
-        loginUrl={loginUrl}
+        email="test-user@example.com"
       />
     );
 
-    expect(screen.getByText(loginUrl)).toBeInTheDocument();
+    // メールアドレスがメッセージ中に含まれること
+    expect(screen.getByText(/test-user@example.com/)).toBeInTheDocument();
   });
 
-  it("URLコピーボタンが表示されること", () => {
+  it("「組織専用ログインURL」テキストが表示されないこと", () => {
     render(
       <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
         invitationSent={true}
-        loginUrl="https://example.com/test-org/login"
+        email="invited@example.com"
       />
     );
 
-    expect(screen.getByText("URLをコピー")).toBeInTheDocument();
+    // 旧仕様のログインURL関連テキストが表示されないこと
+    expect(screen.queryByText(/組織専用ログインURL/)).not.toBeInTheDocument();
   });
 
-  it("コピーボタンクリックでログインURLがクリップボードにコピーされること", async () => {
-    const loginUrl = "https://example.com/test-org/login";
+  it("「URLをコピー」ボタンが存在しないこと", () => {
     render(
       <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
         invitationSent={true}
-        loginUrl={loginUrl}
+        email="invited@example.com"
       />
     );
 
-    fireEvent.click(screen.getByText("URLをコピー"));
-
-    await waitFor(() => {
-      expect(mockWriteText).toHaveBeenCalledWith(loginUrl);
-    });
+    // 旧仕様のコピーボタンが存在しないこと
+    expect(screen.queryByText("URLをコピー")).not.toBeInTheDocument();
   });
 
-  it("コピー成功後に「コピーしました」が表示されること", async () => {
+  it("「閉じる」ボタンが存在すること", () => {
     render(
       <InviteSuccessDialog
         open={true}
         onOpenChange={jest.fn()}
         invitationSent={true}
-        loginUrl="https://example.com/test-org/login"
+        email="invited@example.com"
       />
     );
 
-    fireEvent.click(screen.getByText("URLをコピー"));
-
-    await waitFor(() => {
-      expect(screen.getByText("コピーしました")).toBeInTheDocument();
-    });
+    expect(
+      screen.getByRole("button", { name: "閉じる" })
+    ).toBeInTheDocument();
   });
 });
 
