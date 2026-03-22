@@ -27,7 +27,6 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
@@ -43,6 +42,12 @@ interface MemberFormDialogProps {
   onCreated: () => void;
 }
 
+// ロール値と日本語ラベルのマッピング
+const ROLE_LABELS: Record<string, string> = {
+  user: "使用者（user）",
+  approver: "承認者（approver）",
+};
+
 export function MemberFormDialog({
   open,
   onOpenChange,
@@ -54,6 +59,8 @@ export function MemberFormDialog({
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [invitationSent, setInvitationSent] = useState(false);
   const [invitedEmail, setInvitedEmail] = useState("");
+  // 選択中のロール（日本語ラベル表示用）
+  const [selectedRole, setSelectedRole] = useState<string>("user");
 
   const {
     register,
@@ -94,6 +101,7 @@ export function MemberFormDialog({
 
       // フォームをリセットしてダイアログを閉じる
       reset();
+      setSelectedRole("user");
       onOpenChange(false);
 
       // 招待成功ダイアログを表示
@@ -115,6 +123,7 @@ export function MemberFormDialog({
     if (!nextOpen) {
       reset();
       setServerError(null);
+      setSelectedRole("user");
     }
     onOpenChange(nextOpen);
   };
@@ -177,11 +186,15 @@ export function MemberFormDialog({
                 onValueChange={(value: string | null) => {
                   if (value === "user" || value === "approver") {
                     setValue("role", value);
+                    setSelectedRole(value);
                   }
                 }}
               >
                 <SelectTrigger className="w-full" id="member-role">
-                  <SelectValue placeholder="ロールを選択" />
+                  {/* SelectValueのデフォルト表示はvalue値（英語）になるため、日本語ラベルを明示的に表示 */}
+                  <span data-slot="select-value" className="flex flex-1 text-left">
+                    {ROLE_LABELS[selectedRole] ?? "ロールを選択"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">使用者（user）</SelectItem>
