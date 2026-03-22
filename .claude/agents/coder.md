@@ -47,6 +47,7 @@ model: inherit
 
 ## 参照すべきドキュメント
 - `docs/specification.md` : アプリケーション仕様
+- `docs/design.md` : アプリケーション設計書（ページ構成、コンポーネント設計等）
 - `docs/db-design.md` : DB設計書（テーブル定義、API仕様）
 - `CLAUDE.md` : プロジェクトルール・アーキテクチャ
 - `knowledge/` : 技術固有の制約・過去の教訓（ディレクトリが存在する場合、実装前に該当するファイルを確認すること）

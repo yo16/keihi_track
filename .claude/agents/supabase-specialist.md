@@ -90,6 +90,7 @@ Supabaseの機能を最大限に活用しつつ、ベンダーロックインの
 - Supabaseに関係しない汎用的なアプリケーションロジックは実装しない
 
 ## 参照すべきドキュメント
+- `docs/design.md` : アプリケーション設計書
 - `docs/db-design.md` : DB設計書
 - `docs/specification.md` : アプリケーション仕様
 - `CLAUDE.md` : プロジェクトルール

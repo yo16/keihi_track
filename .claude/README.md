@@ -6,7 +6,7 @@ DB連携アプリケーション向けのバッチ開発ワークフロー。
 ## 概要
 
 1. 人間が仕様書（`docs/specification.md`）を書く
-2. `/batch-design` を実行し、DB設計・API設計を行う（→ `docs/db-design.md`）
+2. `/batch-design` を実行し、アプリケーション設計・DB設計・API設計を行う（→ `docs/design.md`, `docs/db-design.md`）
 3. `task-decomposer` スキルで仕様をBeadsタスクに分解・登録する
 4. `/batch-start` を実行すると、オープンなタスクを依存関係順に自動で全件実行する
 5. 全タスク完了後、`dev` ブランチをGitHubへpushし、`dev → main` のPRを作成する
@@ -15,7 +15,7 @@ DB連携アプリケーション向けのバッチ開発ワークフロー。
 
 | 項目 | batch-dev | batch-dev-db |
 |------|-----------|--------------|
-| 設計フェーズ | なし | `/batch-design` でDB設計・API設計を実施 |
+| 設計フェーズ | なし | `/batch-design` でアプリケーション設計・DB設計・API設計を実施 |
 | DB操作実装 | coderが全て担当 | db-coderがDB操作関数を専門実装 |
 | DB特化サービス | なし | supabase-specialistがSupabase固有機能を担当 |
 | テスト観点 | 標準テスト | DB操作テスト観点を追加 |
@@ -36,9 +36,10 @@ main ← dev ← feature/t-xxx（タスクごと）
 
 | コマンド | 説明 |
 |---------|------|
-| `/batch-design` | DB設計・API設計の実施（`docs/db-design.md` を出力） |
+| `/batch-design` | 設計フェーズの実施（`docs/design.md`, `docs/db-design.md` を出力） |
 | `/batch-start` | 全タスク一括実行のエントリーポイント |
 | `/batch-task-execute` | 単一タスクの実行（コーディング→テスト→マージ） |
+| `/batch-change` | 問題修正・改善・変更の管理（分析→承認→Beads登録→実装） |
 | `/batch-push-pr` | dev をGitHubへpushしPRを作成 |
 | `/batch-failed` | 失敗時の処理（停止・通知） |
 
@@ -46,6 +47,7 @@ main ← dev ← feature/t-xxx（タスクごと）
 
 | エージェント | 説明 |
 |------------|------|
+| `app-designer` | アプリケーション設計スペシャリスト。ページ構成・コンポーネント・状態管理・ディレクトリ構成を設計 |
 | `db-designer` | RDB設計スペシャリスト。テーブル設計・API設計を総合的に行う |
 | `db-coder` | DB操作実装スペシャリスト。クエリ・トランザクション・マイグレーションを担当 |
 | `supabase-specialist` | Supabase特化。Auth・Storage・Realtime・Edge Functions等を担当 |
@@ -60,6 +62,7 @@ main ← dev ← feature/t-xxx（タスクごと）
 
 ```
 /batch-design 時:
+  app-designer ──→ db-designer（データ操作要件を引き渡し）
   db-designer ←→ supabase-specialist（Supabase利用時に相談）
 
 /batch-start → /batch-task-execute 時:
@@ -103,6 +106,32 @@ main ← dev ← feature/t-xxx（タスクごと）
 
 上記はテンプレートであり、プロジェクトの実態に合わせて値を埋める。
 `/batch-design` 実行時に db-designer がこの情報を参照して設計方針を決定する。
+
+### 変更管理ルール
+
+```markdown
+## 変更管理ルール
+- 問題報告・改善要望・変更依頼を受けた場合、即座にコード修正に着手しない
+- 必ず `/batch-change` コマンドのプロセスに従う:
+  1. 問題・要望の整理
+  2. 原因分析
+  3. 対応方針の提示 → ユーザー承認
+  4. Beadsタスクとして登録（背景・原因・きっかけを記録）
+  5. 実装
+- どんなに軽微な修正でも、Beadsタスクとして登録・記録する
+- 特にトラブル対応では「何が問題だったのか」「発覚のきっかけ」を記録することを重視する
+```
+
+## 変更管理の仕組み（4層防御）
+
+問題報告や改善要望が直接コード修正されることを防ぐため、以下の4層で `/batch-change` プロセスへの誘導を行う。
+
+| レイヤー | 仕組み | 役割 |
+|---------|--------|------|
+| 1. Hook | `scripts/change-gate-hook.sh`（UserPromptSubmit） | キーワード検知で毎回リマインダーを注入 |
+| 2. Skill | `change-gate`（shared/skills/） | 自然言語から起動し、ユーザーに確認して `/batch-change` に誘導 |
+| 3. Command | `/batch-change` | 分析→承認→Beads登録→実装の正式プロセス |
+| 4. CLAUDE.md | 上記「変更管理ルール」セクション | 行動規範としての明文化 |
 
 ## 他のDBサービスへの拡張
 
