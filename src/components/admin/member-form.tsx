@@ -53,10 +53,7 @@ export function MemberFormDialog({
   // 招待成功ダイアログの状態
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [invitationSent, setInvitationSent] = useState(false);
-
-  // ログインURLの生成（orgIdなし）
-  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const loginUrl = siteUrl;
+  const [invitedEmail, setInvitedEmail] = useState("");
 
   const {
     register,
@@ -101,6 +98,7 @@ export function MemberFormDialog({
 
       // 招待成功ダイアログを表示
       setInvitationSent(result.data.invitation_sent);
+      setInvitedEmail(data.email);
       setSuccessDialogOpen(true);
 
       // 一覧を更新
@@ -215,7 +213,7 @@ export function MemberFormDialog({
         open={successDialogOpen}
         onOpenChange={setSuccessDialogOpen}
         invitationSent={invitationSent}
-        loginUrl={loginUrl}
+        email={invitedEmail}
       />
     </>
   );
