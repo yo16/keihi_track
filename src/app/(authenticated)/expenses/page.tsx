@@ -7,12 +7,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ExpenseList } from "@/components/expenses/expense-list";
+import type { ExpenseListRow } from "@/components/expenses/expense-list";
 import { Button } from "@/components/ui/button";
-import type { Expense } from "@/types/database";
 
 export default function ExpensesPage() {
   const router = useRouter();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseListRow[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +38,7 @@ export default function ExpensesPage() {
 
         const result = await response.json();
         return {
-          data: result.data as Expense[],
+          data: result.data as ExpenseListRow[],
           pagination: result.pagination as {
             next_cursor: string | null;
             has_more: boolean;

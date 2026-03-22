@@ -19,9 +19,20 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import type { Expense } from "@/types/database";
 
+/** 申請者情報（APIレスポンスに含まれる） */
+interface Applicant {
+  user_id: string;
+  display_name: string;
+}
+
+/** 経費一覧の各行データ（Expense + 申請者情報） */
+export type ExpenseListRow = Expense & {
+  applicant?: Applicant;
+};
+
 interface ExpenseListProps {
   /** 経費データの配列 */
-  expenses: Expense[];
+  expenses: ExpenseListRow[];
   /** 次のページが存在するか */
   hasMore: boolean;
   /** 次のページを読み込むコールバック */
@@ -58,6 +69,7 @@ export function ExpenseList({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>申請者</TableHead>
               <TableHead>使用日</TableHead>
               <TableHead>用途</TableHead>
               <TableHead className="text-right">金額</TableHead>
@@ -72,6 +84,8 @@ export function ExpenseList({
                 className="cursor-pointer"
                 onClick={() => handleRowClick(expense.id)}
               >
+                {/* 申請者名 */}
+                <TableCell>{expense.applicant?.display_name ?? "-"}</TableCell>
                 <TableCell>{formatDate(expense.usage_date)}</TableCell>
                 <TableCell>{expense.purpose}</TableCell>
                 <TableCell className="text-right">
@@ -103,6 +117,12 @@ export function ExpenseList({
                 </span>
                 <StatusBadge status={expense.status} />
               </div>
+              {/* 申請者名 */}
+              {expense.applicant?.display_name && (
+                <div className="text-sm text-muted-foreground">
+                  申請者: {expense.applicant.display_name}
+                </div>
+              )}
               {/* 下段: 金額、使用日、申請日時 */}
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">
