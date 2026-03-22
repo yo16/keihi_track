@@ -197,32 +197,53 @@ src/
 
 ### 4.1.1 招待ユーザーのアカウント有効化フロー
 
+**重要**: Supabase Authの招待メール（invite type）は**Implicitフロー**を使用する。PKCEフロー（code交換）ではない。トークンはハッシュフラグメント（`#`）でクライアントに渡され、サーバーサイド（Route Handler）では読み取れない。
+
 ```
 管理者がメンバー招待
   │
-  ↓ Supabase Auth が招待メールを自動送信
+  ↓ Supabase Auth が招待メールを自動送信（inviteUserByEmail）
   │
 招待されたユーザーがメール内リンクをクリック
   │
-  ↓ /auth/callback でトークン処理
+  ↓ Supabase /auth/v1/verify がトークン検証
+  │
+  ↓ Site URL（/）にハッシュフラグメント付きでリダイレクト
+  │   URL例: /#access_token=xxx&type=invite&refresh_token=yyy
+  │
+  ↓ トップページ（page.tsx）がハッシュフラグメントを検知
+  │   - type=invite を検出
+  │   - @supabase/ssr がハッシュからセッションを自動復元
   │
   ↓ /set-password へリダイレクト
   │
-パスワード設定完了
+パスワード設定完了（supabase.auth.updateUser({ password })）
   │
-  └─ / へリダイレクト → ログイン → /dashboard
+  └─ / へリダイレクト（メッセージ付き）→ ログイン → /dashboard
 ```
+
+**注意点**:
+- `/auth/callback/route.ts` はPKCEフロー用に残しているが、招待フローでは使用されない
+- ハッシュフラグメントはサーバーに送信されないため、トップページのクライアントサイド（useEffect）で処理する必要がある
+- `redirect_to` パラメータで `/auth/callback` を指定しても、invite typeではSupabaseがSite URLにフォールバックする
 
 ### 4.2 セッション管理
 
 - Supabase AuthのJWTトークンをCookieで管理（`@supabase/ssr`）
-- Next.jsミドルウェアで全リクエストのセッションをリフレッシュ
+- Next.js proxy.ts で全リクエストのセッションをリフレッシュ
 - トークン期限切れ時はトップページ（`/`）へリダイレクト
+- 無効なリフレッシュトークン検出時はSupabase関連Cookieを自動クリアし、未認証状態で続行する
 
-**Edge Runtime制約に関する注意**:
-- `middleware.ts` は Edge Runtime で実行されるため、Node.js専用ライブラリ（`jsonwebtoken`, `bcrypt`等）は使用不可
-- `@supabase/ssr` は Edge Runtime 対応済み（Web Crypto APIベース）のため問題なし
-- middleware.ts 内の catch 節では必ず `console.error` でエラーを出力すること（サイレントな握りつぶしは原因不明の認証エラーを引き起こす）
+**proxy.ts（旧middleware.ts）に関する注意**:
+- `proxy.ts` は Edge Runtime ではなくNode.jsランタイムで動作する（Next.js 16のproxy方式）
+- `@supabase/ssr` によるセッションリフレッシュを実行
+- catch 節では必ず `console.error` でエラーを出力すること（サイレントな握りつぶしは原因不明の認証エラーを引き起こす）
+- 詳細は `.claude/knowledge/nextjs-edge-runtime.md` を参照
+
+**Implicitフローに関する注意**:
+- Supabase Authの招待メール（invite type）はImplicitフローを使用し、トークンをハッシュフラグメントで渡す
+- ハッシュフラグメントはサーバーサイドでは取得できないため、クライアントサイドで処理する必要がある
+- トップページ（page.tsx）でハッシュフラグメントを検知し、type=inviteの場合は/set-passwordへリダイレクトするロジックが必要
 - 詳細は `.claude/knowledge/nextjs-edge-runtime.md` を参照
 
 ### 4.3 ルート保護
