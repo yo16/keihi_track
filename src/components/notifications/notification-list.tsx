@@ -161,7 +161,7 @@ export function NotificationList({
               <button
                 type="button"
                 className={`w-full rounded-lg border p-4 text-left transition-colors hover:bg-muted/50 ${
-                  notification.is_read ? "bg-background" : "bg-blue-50"
+                  notification.is_read ? "bg-background" : "bg-amber-50"
                 }`}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -188,7 +188,7 @@ export function NotificationList({
                     <Check className="size-4 shrink-0 text-muted-foreground" />
                   )}
                   {!notification.is_read && (
-                    <span className="size-2 shrink-0 rounded-full bg-blue-500" />
+                    <span className="size-2 shrink-0 rounded-full bg-primary" />
                   )}
                 </div>
               </button>

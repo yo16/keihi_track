@@ -31,6 +31,9 @@
 - APIフレームワーク: Next.js API Routes (App Router)
 - ランタイム: Node.js
 
+## ソースの変更ルール
+- `/batch-change`コマンドを使うこと。
+
 ## テスト方針
 
 - DB操作のテスト: テスト用のSupabaseプロジェクトに接続

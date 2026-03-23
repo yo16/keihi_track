@@ -42,6 +42,7 @@ export function CreateOrgDialog() {
   } = useForm<CreateOrganizationWithSignupInput>({
     resolver: zodResolver(createOrganizationWithSignupSchema),
     defaultValues: {
+      creation_password: "",
       email: "",
       password: "",
       name: "",
@@ -115,6 +116,22 @@ export function CreateOrgDialog() {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="creation-password">作成パスワード</Label>
+            <Input
+              id="creation-password"
+              type="password"
+              placeholder="管理者から共有されたパスワード"
+              {...register("creation_password")}
+              aria-invalid={!!errors.creation_password}
+            />
+            {errors.creation_password && (
+              <p className="text-xs text-destructive">
+                {errors.creation_password.message}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="signup-email">メールアドレス</Label>
             <Input
