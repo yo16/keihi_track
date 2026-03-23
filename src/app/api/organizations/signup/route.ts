@@ -19,7 +19,14 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     throw new ApiError(400, "VALIDATION_ERROR", message);
   }
 
-  const { email, password, name, display_name } = parsed.data;
+  const { creation_password, email, password, name, display_name } = parsed.data;
+
+  // 作成パスワードの照合（環境変数未設定の場合も作成不可）
+  const expectedPassword = process.env.ORG_CREATION_PASSWORD;
+  if (!expectedPassword || creation_password !== expectedPassword) {
+    throw new ApiError(403, "FORBIDDEN", "作成パスワードが正しくありません");
+  }
+
   const adminClient = createAdminClient();
 
   // 1. 既存ユーザーチェック
