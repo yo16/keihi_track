@@ -19,6 +19,16 @@ export const changePasswordSchema = z
 /** スキーマから推論される型 */
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
+/** 表示名変更スキーマ */
+export const updateDisplayNameSchema = z.object({
+  display_name: z
+    .string()
+    .min(1, { message: "表示名を入力してください" }),
+});
+
+/** スキーマから推論される型 */
+export type UpdateDisplayNameInput = z.infer<typeof updateDisplayNameSchema>;
+
 /** ログインスキーマ: メールアドレス + パスワード（orgIdなし） */
 export const loginSchema = z.object({
   email: z.string().email({ message: "有効なメールアドレスを入力してください" }),
