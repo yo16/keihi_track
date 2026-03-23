@@ -16,6 +16,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -78,7 +79,9 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <span className="hidden sm:inline">{displayName}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={8}>
-            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/account")}>
               <Settings className="size-4" />
