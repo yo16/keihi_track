@@ -144,6 +144,9 @@ vite.config.ts.timestamp-*
 .beads/beads.db-shm
 .beads/beads.db-wal
 
+# Python cache
+__pycache__/
+
 # Claude Code local settings
 .claude/settings.local.json
 
