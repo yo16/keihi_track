@@ -211,6 +211,36 @@ export async function createMember(
 }
 
 /**
+ * メンバーの表示名を更新する
+ * @param supabase - サーバー用Supabaseクライアント
+ * @param orgId - 組織ID
+ * @param userId - ユーザーID
+ * @param displayName - 新しい表示名
+ * @returns 更新後のメンバー情報
+ */
+export async function updateDisplayName(
+  supabase: SupabaseClient,
+  orgId: string,
+  userId: string,
+  displayName: string
+): Promise<OrganizationMember> {
+  const { data, error } = await supabase
+    .from("organization_members")
+    .update({ display_name: displayName, updated_at: new Date().toISOString() })
+    .eq("org_id", orgId)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .select("org_id, user_id, role, display_name, deleted_at, created_at, updated_at")
+    .single();
+
+  if (error) {
+    throw new ApiError(500, "DB_ERROR", `表示名の更新に失敗しました: ${error.message}`);
+  }
+
+  return data as OrganizationMember;
+}
+
+/**
  * メンバーのロールを変更する
  * adminが0人にならないようチェックする
  * @param supabase - サーバー用Supabaseクライアント
