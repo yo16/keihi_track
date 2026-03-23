@@ -17,12 +17,12 @@ const statusConfig: Record<
   pending: {
     label: "申請中",
     variant: "default",
-    className: "bg-blue-600 text-white",
+    className: "bg-amber-500 text-white",
   },
   approved: {
     label: "承認済み",
     variant: "default",
-    className: "bg-green-600 text-white",
+    className: "bg-emerald-500 text-white",
   },
   rejected: {
     label: "却下",

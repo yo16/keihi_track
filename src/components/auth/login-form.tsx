@@ -140,7 +140,7 @@ export function LoginForm() {
       <CardContent>
         {/* メッセージ表示（パスワード設定完了時など） */}
         {message && (
-          <p className="text-sm text-green-600 bg-green-50 px-4 py-2 rounded mb-4">
+          <p className="text-sm text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg mb-4">
             {message}
           </p>
         )}
