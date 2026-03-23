@@ -6,7 +6,7 @@
  */
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthContext } from "@/lib/contexts/auth-context";
 import { useNotifications } from "@/lib/hooks/use-notifications";
@@ -16,6 +16,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -78,8 +79,14 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <span className="hidden sm:inline">{displayName}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={8}>
-            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/account")}>
+              <Settings className="size-4" />
+              アカウント設定
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="size-4" />
               ログアウト
