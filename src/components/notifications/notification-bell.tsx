@@ -29,7 +29,7 @@ export function NotificationBell() {
       <Bell className="size-5" />
       {/* 未読バッジ: 0件の場合は非表示、99以上は「99+」と表示 */}
       {unreadCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+        <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       )}

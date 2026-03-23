@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { SetPasswordForm } from "@/components/auth/set-password-form";
 
@@ -95,7 +96,16 @@ export default function SetPasswordPage() {
   // パスワード設定フォーム表示
   return (
     <div className="flex flex-col flex-1 items-center justify-center p-4">
-      <main className="flex flex-col items-center gap-4">
+      <main className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-1">
+          <Image
+            src="/keihi_track_icon.png"
+            alt="ケイトラ"
+            width={64}
+            height={64}
+            priority
+          />
+        </div>
         <SetPasswordForm />
       </main>
     </div>

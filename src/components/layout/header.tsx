@@ -5,6 +5,7 @@
  * ロゴ、通知ベル、ユーザーメニュー、モバイルハンバーガーメニューを表示する
  */
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Menu, LogOut, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthContext } from "@/lib/contexts/auth-context";
@@ -39,7 +40,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center border-b bg-background px-4">
+    <header className="sticky top-0 z-40 flex h-14 items-center border-b bg-card/80 backdrop-blur-sm px-4 shadow-sm">
       {/* モバイル用ハンバーガーメニューボタン */}
       <Button
         variant="ghost"
@@ -53,6 +54,13 @@ export function Header({ onToggleSidebar }: HeaderProps) {
 
       {/* ロゴ */}
       <div className="flex items-center gap-2 font-bold text-lg">
+        <Image
+          src="/keihi_track_icon.png"
+          alt="ケイトラ"
+          width={28}
+          height={28}
+          className="rounded-md"
+        />
         <span className="text-primary">ケイトラ</span>
       </div>
 
