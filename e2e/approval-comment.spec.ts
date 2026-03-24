@@ -29,6 +29,9 @@ test.describe("承認コメント機能", () => {
     // 経費詳細ページの読み込みを待つ
     await expect(page.getByText("E2Eテスト用経費")).toBeVisible({ timeout: 10000 });
 
+    // コメント入力可能な旨の説明テキストが表示されること
+    await expect(page.getByText("ボタンを押すと、コメントを入力できます")).toBeVisible();
+
     // 承認ボタンをクリック（exact: true でユーザーメニューと区別）
     const approveButton = page.getByRole("button", { name: "承認", exact: true });
     await expect(approveButton).toBeVisible();

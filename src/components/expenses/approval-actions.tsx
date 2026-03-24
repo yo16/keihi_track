@@ -135,6 +135,7 @@ export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
           却下
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">ボタンを押すと、コメントを入力できます</p>
 
       {/* 承認コメント入力ダイアログ */}
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
