@@ -18,6 +18,7 @@ describe("generateCsv", () => {
     created_at: "2026-03-20T10:00:00Z",
     approver_name: "山田太郎",
     approved_at: "2026-03-21T09:00:00Z",
+    approval_comment: null,
     rejector_name: null,
     rejected_at: null,
   };
@@ -36,7 +37,7 @@ describe("generateCsv", () => {
     // BOMを除いたヘッダー行
     const headerLine = lines[0].replace("\uFEFF", "");
     expect(headerLine).toBe(
-      "金額,用途,使用日,レシート写真URL,コメント,申請者,申請日時,承認者,承認日時,却下者,却下日時"
+      "金額,用途,使用日,レシート写真URL,コメント,申請者,申請日時,承認者,承認日時,承認コメント,却下者,却下日時"
     );
   });
 
@@ -57,9 +58,10 @@ describe("generateCsv", () => {
     const lines = csv.split("\r\n");
     const values = lines[1].split(",");
 
-    // rejector_name(インデックス9)とrejected_at(インデックス10)がnull
+    // approval_comment(インデックス9), rejector_name(インデックス10), rejected_at(インデックス11)がnull
     expect(values[9]).toBe("");
     expect(values[10]).toBe("");
+    expect(values[11]).toBe("");
   });
 
   it("カンマを含む値がダブルクォートで囲まれる", () => {
@@ -80,6 +82,19 @@ describe("generateCsv", () => {
     const csv = generateCsv([rowWithQuote]);
 
     expect(csv).toContain('"備考""メモ""です"');
+  });
+
+  it("承認コメントがCSVに出力される", () => {
+    const rowWithApprovalComment: CsvExpenseRow = {
+      ...sampleRow,
+      approval_comment: "交際費として仕分け",
+    };
+    const csv = generateCsv([rowWithApprovalComment]);
+    const lines = csv.split("\r\n");
+    const values = lines[1].split(",");
+
+    // 承認コメントはインデックス9
+    expect(values[9]).toBe("交際費として仕分け");
   });
 
   it("複数行のデータが正しく出力される", () => {

@@ -158,6 +158,11 @@ export function ExpenseDetail({ expense }: ExpenseDetailProps) {
           <p className="text-sm text-green-700">
             承認日時: {formatDateTime(expense.approved_at)}
           </p>
+          {expense.approval_comment && (
+            <p className="text-sm text-green-700">
+              承認コメント: {expense.approval_comment}
+            </p>
+          )}
         </div>
       )}
 

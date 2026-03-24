@@ -122,6 +122,7 @@ CREATE TABLE expenses (
                        CHECK (status IN ('pending', 'approved', 'rejected', 'deleted')),
   approved_by        UUID,
   approved_at        TIMESTAMPTZ,
+  approval_comment   TEXT,
   rejected_by        UUID,
   rejected_at        TIMESTAMPTZ,
   rejection_comment  TEXT,
@@ -158,6 +159,7 @@ CREATE INDEX idx_expenses_org_usage_date
 | status | TEXT | NOT NULL, DEFAULT 'pending', CHECK | ステータス |
 | approved_by | UUID | NULL許可 | 承認者のユーザーID |
 | approved_at | TIMESTAMPTZ | NULL許可 | 承認日時 |
+| approval_comment | TEXT | NULL許可 | 承認コメント（仕分けメモ・備忘録等、任意） |
 | rejected_by | UUID | NULL許可 | 却下者のユーザーID |
 | rejected_at | TIMESTAMPTZ | NULL許可 | 却下日時 |
 | rejection_comment | TEXT | NULL許可 | 却下理由 |
@@ -168,7 +170,7 @@ CREATE INDEX idx_expenses_org_usage_date
 - `approved_by` / `rejected_by` は auth.users.id を参照するが、厳密なFK制約は設けない（Supabase Authテーブルへの直接FK追加は運用上の制約があるため）。アプリケーション層で整合性を担保する
 - `status = 'deleted'` が論理削除に相当する（使用者による取り下げ）
 - 再申請時は同じレコードを更新する（IDは変わらない）。ステータスが `rejected` → `pending` に戻り、内容が更新される
-- 却下後に再申請された場合、`rejected_by` / `rejected_at` / `rejection_comment` はクリアされる
+- 却下後に再申請された場合、`rejected_by` / `rejected_at` / `rejection_comment` および `approved_by` / `approved_at` / `approval_comment` はクリアされる
 
 ステータス遷移に対するCHECK制約（アプリケーション層で実装）:
 - `pending` → `approved` : `approved_by` と `approved_at` が必須、`applicant_user_id != approved_by`（ただし承認権限者が1人のみの場合は自己承認を許可）

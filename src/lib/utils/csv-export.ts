@@ -14,6 +14,7 @@ export interface CsvExpenseRow {
   created_at: string;
   approver_name: string | null;
   approved_at: string | null;
+  approval_comment: string | null;
   rejector_name: string | null;
   rejected_at: string | null;
 }
@@ -29,6 +30,7 @@ const CSV_HEADERS = [
   "申請日時",
   "承認者",
   "承認日時",
+  "承認コメント",
   "却下者",
   "却下日時",
 ] as const;
@@ -69,6 +71,7 @@ export function generateCsv(data: CsvExpenseRow[]): string {
       escapeCsvValue(row.created_at),
       escapeCsvValue(row.approver_name),
       escapeCsvValue(row.approved_at),
+      escapeCsvValue(row.approval_comment),
       escapeCsvValue(row.rejector_name),
       escapeCsvValue(row.rejected_at),
     ];

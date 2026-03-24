@@ -109,6 +109,7 @@ const baseExpense: Expense = {
   rejected_by: null,
   rejected_at: null,
   rejection_comment: null,
+  approval_comment: null,
   created_at: "2026-03-20T10:00:00Z",
   updated_at: "2026-03-20T10:00:00Z",
 };
