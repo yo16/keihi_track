@@ -5,6 +5,7 @@
 import {
   createExpenseSchema,
   resubmitExpenseSchema,
+  approveExpenseSchema,
   rejectExpenseSchema,
 } from "../src/lib/validators/expense";
 import { createMemberSchema, changeRoleSchema } from "../src/lib/validators/member";
@@ -81,6 +82,23 @@ describe("createExpenseSchema", () => {
 describe("resubmitExpenseSchema", () => {
   it("createExpenseSchemaと同じスキーマであること", () => {
     expect(resubmitExpenseSchema).toBe(createExpenseSchema);
+  });
+});
+
+describe("approveExpenseSchema", () => {
+  it("コメント付きデータをパースできること", () => {
+    const result = approveExpenseSchema.safeParse({ comment: "交際費として仕分け" });
+    expect(result.success).toBe(true);
+  });
+
+  it("コメントなしでもパースできること（任意）", () => {
+    const result = approveExpenseSchema.safeParse({});
+    expect(result.success).toBe(true);
+  });
+
+  it("空文字のコメントでもパースできること", () => {
+    const result = approveExpenseSchema.safeParse({ comment: "" });
+    expect(result.success).toBe(true);
   });
 });
 

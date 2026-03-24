@@ -77,6 +77,7 @@ const mockExpense = {
   rejected_by: null,
   rejected_at: null,
   rejection_comment: null,
+  approval_comment: null,
   created_at: "2025-03-15T10:00:00Z",
   updated_at: "2025-03-15T10:00:00Z",
 };
@@ -259,6 +260,48 @@ describe("ExpenseDetail", () => {
 
     expect(screen.queryByText("取り下げ")).not.toBeInTheDocument();
     expect(screen.queryByText("再申請")).not.toBeInTheDocument();
+  });
+
+  it("承認済み経費に承認コメントが表示される", async () => {
+    const { ExpenseDetail } = await import(
+      "../src/components/expenses/expense-detail"
+    );
+    const approvedExpense = {
+      ...mockExpense,
+      status: "approved" as const,
+      approved_by: "approver-1",
+      approved_at: "2025-03-16T10:00:00Z",
+      approval_comment: "交際費として仕分け",
+    };
+    render(
+      <AuthWrapper>
+        <ExpenseDetail expense={approvedExpense} />
+      </AuthWrapper>
+    );
+
+    expect(screen.getByText("承認情報")).toBeInTheDocument();
+    expect(screen.getByText("承認コメント: 交際費として仕分け")).toBeInTheDocument();
+  });
+
+  it("承認コメントがない場合は承認コメント行が表示されない", async () => {
+    const { ExpenseDetail } = await import(
+      "../src/components/expenses/expense-detail"
+    );
+    const approvedExpense = {
+      ...mockExpense,
+      status: "approved" as const,
+      approved_by: "approver-1",
+      approved_at: "2025-03-16T10:00:00Z",
+      approval_comment: null,
+    };
+    render(
+      <AuthWrapper>
+        <ExpenseDetail expense={approvedExpense} />
+      </AuthWrapper>
+    );
+
+    expect(screen.getByText("承認情報")).toBeInTheDocument();
+    expect(screen.queryByText(/承認コメント/)).not.toBeInTheDocument();
   });
 
   it("レシート画像が表示される", async () => {

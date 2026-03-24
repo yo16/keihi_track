@@ -1,6 +1,6 @@
 ---
 name: github-manager
-description: GitHub操作専門エージェント。devブランチのpushとPR作成を行う。ローカルgit操作やコード実装は行わない。
+description: GitHub操作専門エージェント。pushとPR作成、pullを行う。ローカルgit操作やコード実装は行わない。
 tools: Bash, Read, Write, Grep, Glob
 model: inherit
 ---

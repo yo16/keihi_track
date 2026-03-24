@@ -29,6 +29,11 @@ export const createExpenseSchema = z.object({
 /** 経費再申請スキーマ: 作成スキーマと同じ */
 export const resubmitExpenseSchema = createExpenseSchema;
 
+/** 経費承認スキーマ: コメント任意 */
+export const approveExpenseSchema = z.object({
+  comment: z.string().optional(),
+});
+
 /** 経費却下スキーマ: コメント必須 */
 export const rejectExpenseSchema = z.object({
   comment: z
@@ -39,4 +44,5 @@ export const rejectExpenseSchema = z.object({
 /** スキーマから推論される型 */
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type ResubmitExpenseInput = z.infer<typeof resubmitExpenseSchema>;
+export type ApproveExpenseInput = z.infer<typeof approveExpenseSchema>;
 export type RejectExpenseInput = z.infer<typeof rejectExpenseSchema>;

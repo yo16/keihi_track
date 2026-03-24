@@ -51,6 +51,7 @@ export interface Expense {
   rejected_by: string | null;
   rejected_at: string | null;
   rejection_comment: string | null;
+  approval_comment: string | null;
   created_at: string;
   updated_at: string;
 }
