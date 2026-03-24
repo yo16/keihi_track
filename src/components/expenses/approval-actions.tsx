@@ -23,28 +23,35 @@ interface ApprovalActionsProps {
   expenseId: string;
 }
 
-/** 承認/却下アクションボタン + 却下理由入力ダイアログ */
+/** 承認/却下アクションボタン + ダイアログ */
 export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
   const router = useRouter();
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [approvalComment, setApprovalComment] = useState("");
   const [rejectionComment, setRejectionComment] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   /** 承認処理 */
   const handleApprove = async () => {
-    if (!confirm("この経費申請を承認しますか?")) {
-      return;
-    }
-
     setIsApproving(true);
     setError(null);
 
     try {
+      const body: Record<string, string> = {};
+      if (approvalComment.trim()) {
+        body.comment = approvalComment.trim();
+      }
+
       const response = await fetch(
         `/api/expenses/${expenseId}/approve`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
       );
 
       if (!response.ok) {
@@ -52,9 +59,10 @@ export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
         throw new Error(errorData?.error?.message || "承認に失敗しました");
       }
 
-      // 成功後にページをリフレッシュ
+      // ダイアログを閉じてページをリフレッシュ
+      setShowApproveDialog(false);
+      setApprovalComment("");
       router.refresh();
-      // ページ全体を再読み込みしてデータを最新にする
       window.location.reload();
     } catch (err) {
       const message =
@@ -113,11 +121,11 @@ export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
       {/* 承認・却下ボタン */}
       <div className="flex gap-3">
         <Button
-          onClick={handleApprove}
+          onClick={() => setShowApproveDialog(true)}
           disabled={isApproving}
           className="bg-green-600 hover:bg-green-700 text-white"
         >
-          {isApproving ? "処理中..." : "承認"}
+          承認
         </Button>
         <Button
           variant="destructive"
@@ -127,6 +135,53 @@ export function ApprovalActions({ expenseId }: ApprovalActionsProps) {
           却下
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">ボタンを押すと、コメントを入力できます</p>
+
+      {/* 承認コメント入力ダイアログ */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>経費の承認</DialogTitle>
+            <DialogDescription>
+              この経費申請を承認します。コメントがあれば入力してください（任意）
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Label htmlFor="approval-comment">コメント（任意）</Label>
+            <Textarea
+              id="approval-comment"
+              value={approvalComment}
+              onChange={(e) => setApprovalComment(e.target.value)}
+              placeholder="仕分けメモや備忘録など"
+              rows={3}
+            />
+          </div>
+
+          {/* ダイアログ内エラー */}
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowApproveDialog(false);
+                setApprovalComment("");
+                setError(null);
+              }}
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={isApproving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isApproving ? "処理中..." : "承認する"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 却下理由入力ダイアログ */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>

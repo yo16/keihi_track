@@ -13,7 +13,7 @@ import { notifyApproved } from "@/lib/email/send-notification";
 /** POST: 経費を承認 */
 export const POST = withErrorHandler(
   async (
-    _request: NextRequest,
+    request: NextRequest,
     context: { params: Promise<Record<string, string>> }
   ) => {
     const { expenseId } = await context.params;
@@ -34,15 +34,26 @@ export const POST = withErrorHandler(
     requireRole(currentMember, "approver");
     const orgId = currentMember.org_id;
 
-    // 3. DB操作: 経費を承認
-    const expense = await approveExpense(supabase, orgId, expenseId, user.id);
+    // 3. リクエストボディからコメントを取得（任意）
+    let comment: string | null = null;
+    try {
+      const body = await request.json();
+      if (body?.comment && typeof body.comment === "string") {
+        comment = body.comment.trim() || null;
+      }
+    } catch {
+      // ボディなしの場合は無視（後方互換）
+    }
 
-    // 4. メール通知: 申請者に承認を通知（fire-and-forget）
+    // 4. DB操作: 経費を承認
+    const expense = await approveExpense(supabase, orgId, expenseId, user.id, comment);
+
+    // 5. メール通知: 申請者に承認を通知（fire-and-forget）
     notifyApproved(orgId, expenseId, expense.applicant_user_id).catch((err) => {
       console.error("[メール通知エラー] 承認通知の送信に失敗:", err);
     });
 
-    // 5. レスポンス返却
+    // 6. レスポンス返却
     return NextResponse.json({ data: expense });
   }
 );

@@ -157,3 +157,4 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+e2e/.setup-state.json

@@ -66,6 +66,7 @@ export interface ExpenseDetail {
   rejected_by: { user_id: string; display_name: string } | null;
   rejected_at: string | null;
   rejection_comment: string | null;
+  approval_comment: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,6 +82,7 @@ export interface ExpenseCsvRow {
   created_at: string;
   approver_name: string | null;
   approved_at: string | null;
+  approval_comment: string | null;
   rejector_name: string | null;
   rejected_at: string | null;
 }
@@ -180,7 +182,7 @@ export async function createExpense(
       status: "pending",
     })
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .single();
 
@@ -344,7 +346,7 @@ export async function getExpense(
   const { data: expense, error } = await supabase
     .from("expenses")
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", expenseId)
@@ -416,6 +418,7 @@ export async function getExpense(
       : null,
     rejected_at: expense.rejected_at,
     rejection_comment: expense.rejection_comment,
+    approval_comment: expense.approval_comment,
     created_at: expense.created_at,
     updated_at: expense.updated_at,
   };
@@ -437,13 +440,14 @@ export async function approveExpense(
   supabase: SupabaseClient,
   orgId: string,
   expenseId: string,
-  approverId: string
+  approverId: string,
+  comment?: string | null
 ): Promise<Expense> {
   // 対象経費を取得してステータスと申請者を確認
   const { data: expense, error: fetchError } = await supabase
     .from("expenses")
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", expenseId)
@@ -502,11 +506,12 @@ export async function approveExpense(
       status: "approved",
       approved_by: approverId,
       approved_at: now,
+      approval_comment: comment ?? null,
     })
     .eq("id", expenseId)
     .eq("org_id", orgId)
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .single();
 
@@ -519,7 +524,7 @@ export async function approveExpense(
   }
 
   // ステータスログに記録
-  await insertStatusLog(expenseId, approverId, "pending", "approved");
+  await insertStatusLog(expenseId, approverId, "pending", "approved", comment);
 
   return updated as Expense;
 }
@@ -548,7 +553,7 @@ export async function rejectExpense(
   const { data: expense, error: fetchError } = await supabase
     .from("expenses")
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", expenseId)
@@ -612,7 +617,7 @@ export async function rejectExpense(
     .eq("id", expenseId)
     .eq("org_id", orgId)
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .single();
 
@@ -652,7 +657,7 @@ export async function withdrawExpense(
   const { data: expense, error: fetchError } = await supabase
     .from("expenses")
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", expenseId)
@@ -694,7 +699,7 @@ export async function withdrawExpense(
     .eq("id", expenseId)
     .eq("org_id", orgId)
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .single();
 
@@ -736,7 +741,7 @@ export async function resubmitExpense(
   const { data: expense, error: fetchError } = await supabase
     .from("expenses")
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .eq("org_id", orgId)
     .eq("id", expenseId)
@@ -786,11 +791,14 @@ export async function resubmitExpense(
       rejected_by: null,
       rejected_at: null,
       rejection_comment: null,
+      approved_by: null,
+      approved_at: null,
+      approval_comment: null,
     })
     .eq("id", expenseId)
     .eq("org_id", orgId)
     .select(
-      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, created_at, updated_at"
+      "id, org_id, applicant_user_id, amount, purpose, usage_date, receipt_url, receipt_thumbnail_url, comment, status, approved_by, approved_at, rejected_by, rejected_at, rejection_comment, approval_comment, created_at, updated_at"
     )
     .single();
 
@@ -832,7 +840,7 @@ export async function getExpensesForCsv(
   const { data: expenses, error } = await supabase
     .from("expenses")
     .select(
-      "id, amount, purpose, usage_date, receipt_url, comment, applicant_user_id, approved_by, approved_at, rejected_by, rejected_at, created_at"
+      "id, amount, purpose, usage_date, receipt_url, comment, applicant_user_id, approved_by, approved_at, approval_comment, rejected_by, rejected_at, created_at"
     )
     .eq("org_id", orgId)
     .in("id", ids);
@@ -893,6 +901,7 @@ export async function getExpensesForCsv(
       ? nameMap.get(exp.approved_by) ?? ""
       : null,
     approved_at: exp.approved_at as string | null,
+    approval_comment: exp.approval_comment as string | null,
     rejector_name: exp.rejected_by
       ? nameMap.get(exp.rejected_by) ?? ""
       : null,
